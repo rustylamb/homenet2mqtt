@@ -17,6 +17,7 @@ for (let i = 0; i < 256; i++) {
 export class ProtocolManager extends EventEmitter {
   private parser: PacketParser;
   private devices: Device[] = [];
+  private deviceMap: Map<string, Device> = new Map();
   private config: ProtocolConfig;
   private txQueue: number[][] = [];
   private txQueueLowPriority: number[][] = [];
@@ -144,6 +145,11 @@ export class ProtocolManager extends EventEmitter {
 
   public registerDevice(device: Device) {
     this.devices.push(device);
+    // Add to map for O(1) lookup.
+    // If ID already exists, we keep the first one to match Array.find() behavior.
+    if (!this.deviceMap.has(device.getId())) {
+      this.deviceMap.set(device.getId(), device);
+    }
     logger.debug(
       { deviceId: device.getId(), deviceName: device.getName() },
       '[ProtocolManager] Device registered',
@@ -151,7 +157,7 @@ export class ProtocolManager extends EventEmitter {
   }
 
   public getDevice(id: string): Device | undefined {
-    return this.devices.find((d) => d.getId() === id);
+    return this.deviceMap.get(id);
   }
 
   public handleIncomingByte(byte: number): void {
