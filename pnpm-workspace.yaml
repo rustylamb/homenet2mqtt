@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - docs
 
 onlyBuiltDependencies:
   - '@homebridge/node-pty-prebuilt-multiarch'
