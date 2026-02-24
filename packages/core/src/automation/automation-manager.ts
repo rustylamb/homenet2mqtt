@@ -93,6 +93,7 @@ export class AutomationManager {
   private readonly mqttPublisher: MqttPublisher;
   private readonly celExecutor = new CelExecutor();
   private readonly debounceTracker = new Map<string, number>();
+  private readonly triggerDebounceCache = new WeakMap<AutomationTriggerState, number>();
   private readonly automationTimers = new Map<string, NodeJS.Timeout[]>();
   private readonly subscriptions: {
     emitter: EventEmitter;
@@ -488,7 +489,11 @@ export class AutomationManager {
     if (!this.matchesValue(value, trigger.match)) return false;
 
     if (trigger.debounce_ms) {
-      const debounce = parseDuration(trigger.debounce_ms as any) ?? 0;
+      let debounce = this.triggerDebounceCache.get(trigger);
+      if (debounce === undefined) {
+        debounce = parseDuration(trigger.debounce_ms as any) ?? 0;
+        this.triggerDebounceCache.set(trigger, debounce);
+      }
       const key = `${trigger.entity_id}:${trigger.property ?? '*'}:${trigger.match ?? 'any'}`;
       const last = this.debounceTracker.get(key);
       const now = Date.now();
