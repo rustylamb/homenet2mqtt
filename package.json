@@ -13,6 +13,8 @@
     "core:build": "pnpm --filter @rs485-homenet/core build",
     "service:build": "pnpm --filter @rs485-homenet/service build",
     "ui:build": "pnpm --filter @rs485-homenet/ui build",
+    "docs:dev": "pnpm --filter docs dev",
+    "docs:build": "pnpm --filter docs build",
     "dev:up": "docker compose -f deploy/docker/docker-compose.dev.yml up -d --build app simulator",
     "dev:down": "docker compose -f deploy/docker/docker-compose.dev.yml rm -s -f app simulator",
     "dev:up:all": "docker compose -f deploy/docker/docker-compose.dev.yml up -d",
