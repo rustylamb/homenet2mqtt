@@ -38,6 +38,11 @@ export interface ConfigRoutesContext {
 export function createConfigRoutes(ctx: ConfigRoutesContext): Router {
   const router = Router();
 
+  // Cache entity indexes to optimize O(N*M) lookups down to O(1)
+  const configEntityIndexes = new WeakMap<object, Map<string, any>>();
+  const configAutomationIndexes = new WeakMap<object, Map<string, any>>();
+  const configScriptIndexes = new WeakMap<object, Map<string, any>>();
+
   // --- Helper Functions ---
   // Moved to utils/config-helpers.ts
 
@@ -54,30 +59,53 @@ export function createConfigRoutes(ctx: ConfigRoutesContext): Router {
 
     if (type === 'entity') {
       for (const rawConfig of currentRawConfigs) {
-        for (const entityType of ENTITY_TYPE_KEYS) {
-          const entities = rawConfig[entityType] as Array<any> | undefined;
-          if (Array.isArray(entities)) {
-            foundEntity = entities.find((e) => e.id === entityId);
-            if (foundEntity) break;
+        let index = configEntityIndexes.get(rawConfig);
+        if (!index) {
+          index = new Map<string, any>();
+          for (const entityType of ENTITY_TYPE_KEYS) {
+            const entities = rawConfig[entityType] as Array<any> | undefined;
+            if (Array.isArray(entities)) {
+              for (const e of entities) {
+                if (e && e.id) index.set(e.id, e);
+              }
+            }
           }
+          configEntityIndexes.set(rawConfig, index);
         }
+        foundEntity = index.get(entityId);
         if (foundEntity) break;
       }
     } else if (type === 'automation') {
       for (const rawConfig of currentRawConfigs) {
-        const automations = rawConfig.automation as Array<any> | undefined;
-        if (Array.isArray(automations)) {
-          foundEntity = automations.find((automation) => automation.id === entityId);
-          if (foundEntity) break;
+        let index = configAutomationIndexes.get(rawConfig);
+        if (!index) {
+          index = new Map<string, any>();
+          const automations = rawConfig.automation as Array<any> | undefined;
+          if (Array.isArray(automations)) {
+            for (const a of automations) {
+              if (a && a.id) index.set(a.id, a);
+            }
+          }
+          configAutomationIndexes.set(rawConfig, index);
         }
+        foundEntity = index.get(entityId);
+        if (foundEntity) break;
       }
     } else if (type === 'script') {
       for (const rawConfig of currentRawConfigs) {
-        const scripts = rawConfig.scripts as Array<any> | undefined;
-        if (Array.isArray(scripts)) {
-          foundEntity = scripts.find((script) => script.id === entityId);
-          if (foundEntity) break;
+        let index = configScriptIndexes.get(rawConfig);
+        if (!index) {
+          index = new Map<string, any>();
+          const scripts = rawConfig.scripts as Array<any> | undefined;
+          if (Array.isArray(scripts)) {
+            for (const s of scripts) {
+              if (s && s.id) index.set(s.id, s);
+            }
+          }
+          configScriptIndexes.set(rawConfig, index);
         }
+        foundEntity = index.get(entityId);
+        if (foundEntity) break;
       }
     } else {
       return res.status(400).json({ error: 'Unknown config type' });
