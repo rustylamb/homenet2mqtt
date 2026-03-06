@@ -4,6 +4,7 @@
 
 v2.9.0
 - feat: light 엔티티에 color_temp가 mired대신 kelvin을 사용하도록 수정. 
+- 문서 사이트 개설 [바로가기](https://homenet2mqtt-docs.vercel.app/)
 - 기타 성능 최적화 및 버그수정
 
 v2.8.5

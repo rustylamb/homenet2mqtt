@@ -7,7 +7,7 @@ hero:
   tagline: Home Assistant와 연동 가능한 한국형 Wallpad 브릿지
   actions:
     - theme: brand
-      text: 5분 빠른 시작
+      text: 빠른 시작
       link: /guide/quick-start
     - theme: alt
       text: 설치 방법 보기
@@ -38,9 +38,6 @@ features:
 - 별도 서버나 NAS에서 운용하거나, compose로 배포/백업을 관리하고 싶다면 Docker를 권장합니다.
 - 바로 시작: [Docker 설치 가이드](/guide/install-docker)
 
-### 3) 기존 설정 마이그레이션 사용자
-- 기존 YAML 설정을 유지하면서 구조만 개선하고 싶다면 최소 설정과 고급 설정 문서부터 확인하세요.
-- 바로 시작: [최소 동작 설정](/config/minimal-config), [고급 설정](/guide/advanced-setup)
 
 ## 시작 전 체크리스트
 
@@ -48,8 +45,6 @@ features:
 - MQTT 브로커 접속 정보(host/port/계정)를 확인했습니다.
 - Homenet2MQTT를 실행할 환경(Add-on 또는 Docker)을 결정했습니다.
 - 제조사(예: Bestin, Commax, Kocom)를 확인했습니다.
-
-➡ 제조사 확인이 필요하다면: [제조사 허브](/manufacturers/index)
 
 ## 막히면 바로 여기로
 

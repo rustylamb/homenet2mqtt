@@ -639,5 +639,3 @@ state_number:
   length: 1
   precision: 1  # 값 / 10 (예: 235 -> 23.5)
 ```
-
-더 자세한 정보는 [README.md](https://github.com/wooooooooooook/homenet2mqtt/blob/main/README.md)를 참조하세요.

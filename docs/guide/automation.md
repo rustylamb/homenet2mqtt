@@ -25,13 +25,14 @@ HomenetBridge는 상태 변경, 패킷 수신, 스케줄 또는 시스템 시작
 
 자동화를 실행하는 조건입니다.
 
-## 트리거 옵션 요약
+- [상태 트리거 (State Trigger)](#state-trigger)
+- [패킷 트리거 (Packet Trigger)](#packet-trigger)
+- [스케줄 트리거 (Schedule Trigger)](#schedule-trigger)
+- [시작 트리거 (Startup Trigger)](#startup-trigger)
 
-- `guard`는 모든 트리거 유형에서 사용할 수 있습니다.
-- `schedule` 트리거는 `every` 또는 `cron` 중 하나를 사용합니다.
-- `state` 트리거는 `debounce_ms`로 빈번한 상태 변경을 억제합니다.
 
-### 상태 트리거 (State Trigger)
+
+### 상태 트리거 (State Trigger) {#state-trigger}
 
 특정 엔티티의 상태가 변경되고 조건이 일치할 때 실행됩니다.
 
@@ -46,12 +47,13 @@ trigger:
 
 **사용 가능한 프로퍼티**
 
-- `entity_id` (필수): 상태 변경을 감지할 엔티티 ID.
-- `property` (선택): 상태 객체의 특정 키만 비교합니다. 생략 시 상태 객체 전체를 비교합니다.
-  - 예: `state`, `value`, `state_on`, `state_brightness` 등 엔티티 상태에 저장된 키.
-- `match` (선택): 비교할 값 또는 조건 객체. 생략하면 어떤 값이든 상태 변경 시 트리거됩니다.
-- `debounce_ms` (optional): 디바운스 시간 (숫자 ms 또는 '1s' 형식). 짧은 시간에 여러 번 상태가 변할 때 마지막 변화 후 설정 시간 동안 추가 변화가 없어야 트리거됩니다. (`debounce`로도 사용 가능)
-- `guard` (optional): 추가적인 CEL 조건문 표현식. 참이면 트리거 실행(자동화 공통 guard와 함께 평가).
+| 필드명 | 필수 여부 | 설명 |
+| :--- | :--- | :--- |
+| `entity_id` | 필수 | 상태 변경을 감지할 엔티티 ID. |
+| `property` | 선택 | 상태 객체의 특정 키만 비교합니다. 생략 시 상태 객체 전체를 비교합니다. (예: `state`, `value`, `state_on`, `state_brightness` 등) |
+| `match` | 선택 | 비교할 값 또는 조건 객체. 생략하면 어떤 값이든 상태 변경 시 트리거됩니다. |
+| `debounce_ms` | 선택 | 디바운스 시간 (숫자 ms 또는 '1s' 형식). 짧은 시간에 여러 번 상태가 변할 때 마지막 변화 후 설정 시간 동안 추가 변화가 없어야 트리거됩니다. (`debounce`로도 사용 가능) |
+| `guard` | 선택 | 추가적인 CEL 조건문 표현식. 참이면 트리거 실행(자동화 공통 guard와 함께 평가). |
 
 **match 스키마**
 `match`는 아래 형태 중 하나를 사용할 수 있습니다.
@@ -67,7 +69,7 @@ trigger:
 
 > **참고**: `property`를 생략한 경우 `match`는 상태 객체 전체를 비교합니다. 이때는 보통 `property`를 지정해 개별 값 비교를 권장합니다.
 
-### 패킷 트리거 (Packet Trigger)
+### 패킷 트리거 (Packet Trigger) {#packet-trigger}
 
 정의된 스키마와 일치하는 원본(Raw) 패킷이 수신될 때 실행됩니다.
 **참고**: `offset`을 생략하면 헤더 다음 바이트부터 매칭하고, `offset`을 명시하면 헤더 포함 전체 패킷 기준으로 매칭합니다.
@@ -105,7 +107,7 @@ guard: "has(trigger.prev_packet) && trigger.prev_packet == [0xAB, 0x41, 0x00]"
 ```
 
 
-### 스케줄 트리거 (Schedule Trigger)
+### 스케줄 트리거 (Schedule Trigger) {#schedule-trigger}
 
 주기적으로 또는 특정 시각(Cron)에 실행됩니다.
 (config에서 timezone 미설정시 UTC사용, 설정시 로컬타임존을 사용합니다.)
@@ -121,7 +123,7 @@ trigger:
 > [!NOTE]
 > 스케줄 트리거가 포함된 자동화의 모든 `command` 액션은 기본적으로 `low_priority: true`로 설정됩니다. 이는 주기적인 폴링이나 비동기 작업이 사용자의 실시간 명령(조명 제어 등)을 방해하지 않도록 하기 위함입니다. 이를 원치 않는 경우 `low_priority: false`를 명시적으로 설정하세요。
 
-### 시작 트리거 (Startup Trigger)
+### 시작 트리거 (Startup Trigger) {#startup-trigger}
 
 애플리케이션이 시작될 때(부팅 시) 실행됩니다. 지연 실행이 필요한 경우 `action` 단계에서 `delay`를 사용해야 합니다.
 
@@ -134,7 +136,20 @@ trigger:
 
 트리거 조건이 충족되었을 때 수행할 작업입니다.
 
-### 명령 (Command)
+- [명령 (Command)](#command)
+- [발행 (Publish - MQTT)](#publish---mqtt)
+- [패킷 전송 (Send Packet - Raw)](#send-packet)
+- [상태 갱신 (Update State)](#update-state)
+- [지연 (Delay)](#delay)
+- [로그 (Log)](#log)
+- [스크립트 실행 (Script)](#script)
+- [조건문 (If)](#if)
+- [다중 조건 분기 (Choose)](#choose)
+- [자동화 중지 (Stop)](#stop)
+- [반복문 (Repeat)](#repeat)
+- [조건 대기 (Wait Until)](#wait-until)
+
+### 명령 (Command) {#command}
 
 엔티티에 제어 명령을 보냅니다.
 
@@ -161,7 +176,7 @@ input:
   time: '12:00'
 ```
 
-### 발행 (Publish - MQTT)
+### 발행 (Publish - MQTT) {#publish---mqtt}
 
 MQTT 토픽으로 메시지를 발행합니다.
 
@@ -172,7 +187,7 @@ payload: 'something happened'
 retain: true # 선택사항. 기본값: false
 ```
 
-### 패킷 전송 (Send Packet - Raw)
+### 패킷 전송 (Send Packet - Raw) {#send-packet}
 
 장치로 직접 원본 패킷을 전송합니다. `ack` 옵션을 사용하여 응답 패킷을 기다릴 수 있습니다.
 
@@ -204,7 +219,7 @@ ack: [0x06]
 > [!WARNING]
 > CEL 표현식으로 패킷 리스트(`data`, `ack`)를 생성할 때, 모든 요소는 동일한 타입(주로 `int`)이어야 합니다. `states`나 `trigger` 등의 동적 값(`dyn`)을 포함할 때는 반드시 `int()`로 캐스팅해야 합니다. 자세한 내용은 [CEL 가이드 > 자주 발생하는 문제](./cel-guide.md#자주-발생하는-문제와-팁-troubleshooting)를 참고하세요.
 
-### 상태 갱신 (Update State)
+### 상태 갱신 (Update State) {#update-state}
 
 수신된 패킷(패킷 트리거)에서 값을 추출해 엔티티 상태를 직접 갱신합니다. `state` 항목은 `StateSchema/StateNumSchema`로 정의합니다.
 
@@ -229,7 +244,7 @@ state:
 - `update_state`는 대상 엔티티에 정의된 `state_*` 항목과 해당 속성명(예: `brightness`, `target_temperature`)만 허용하며, 정의되지 않은 속성은 오류로 처리됩니다.
 - `update_state`는 모든 엔티티 타입에서 `parseData`와 동일한 해석(모드/상태 플래그 변환 등)을 수행하며, 해석에 사용된 원본 키는 정리됩니다.
 
-### 지연 (Delay)
+### 지연 (Delay) {#delay}
 
 일정 시간 동안 대기합니다.
 
@@ -238,7 +253,7 @@ action: delay
 - milliseconds: 대기 시간 (숫자 ms 또는 '1s', '5m' 등의 기간 문자열). `duration` 또는 `delay` 키로도 사용 가능합니다.
 ```
 
-### 로그 (Log)
+### 로그 (Log) {#log}
 
 시스템 로그에 메시지를 기록합니다. 디버깅 용도로 유용합니다.
 
@@ -248,7 +263,7 @@ level: info # trace, debug, info, warn, error. 기본값: info
 message: '자동화가 실행되었습니다.'
 ```
 
-### 스크립트 실행 (Script)
+### 스크립트 실행 (Script) {#script}
 
 사전에 정의한 `scripts` 블록의 액션 시퀀스를 실행합니다. 설정 방법은 [SCRIPTS.md](./scripts.md)를 참고하세요.
 
@@ -257,7 +272,7 @@ action: script
 script: warm_start
 ```
 
-### 조건문 (If)
+### 조건문 (If) {#if}
 
 CEL 표현식을 평가하여 조건에 따라 다른 액션을 실행합니다.
 
@@ -272,7 +287,7 @@ CEL 표현식을 평가하여 조건에 따라 다른 액션을 실행합니다.
       target: id(heater_1).command_off()
 ```
 
-### 다중 조건 분기 (Choose)
+### 다중 조건 분기 (Choose) {#choose}
 
 여러 조건을 순차적으로 평가하여 첫 번째로 일치하는 조건의 액션을 실행합니다. 중첩된 `if-else`보다 가독성이 좋습니다.
 
@@ -298,7 +313,7 @@ CEL 표현식을 평가하여 조건에 따라 다른 액션을 실행합니다.
 
 > **참고**: `choose`는 첫 번째로 일치하는 조건만 실행하고 종료합니다. 여러 조건이 동시에 참일 수 있더라도 첫 번째 것만 실행됩니다.
 
-### 자동화 중지 (Stop)
+### 자동화 중지 (Stop) {#stop}
 
 현재 자동화의 실행을 즉시 중지합니다. 이후 액션은 실행되지 않습니다.
 
@@ -318,7 +333,7 @@ CEL 표현식을 평가하여 조건에 따라 다른 액션을 실행합니다.
 - 안전 가드 구현
 - 에러 상황에서 실행 중단
 
-### 반복문 (Repeat)
+### 반복문 (Repeat) {#repeat}
 
 액션을 여러 번 반복 실행합니다.
 
@@ -349,7 +364,7 @@ CEL 표현식을 평가하여 조건에 따라 다른 액션을 실행합니다.
 
 > **주의**: `while`을 사용할 때는 반드시 `max`를 지정하거나 루프 내에서 조건이 변경되도록 해야 합니다. 무한 루프를 방지하기 위해 최대 반복 횟수가 제한됩니다.
 
-### 조건 대기 (Wait Until)
+### 조건 대기 (Wait Until) {#wait-until}
 
 특정 조건이 충족될 때까지 대기합니다. 타임아웃을 설정할 수 있으며, 조건은 CEL 표현식으로 평가됩니다.
 

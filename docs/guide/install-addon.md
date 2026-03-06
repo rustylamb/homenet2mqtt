@@ -28,7 +28,3 @@
 - Home Assistant에서 MQTT 디바이스가 자동 등록되는지 확인합니다.
 - 등록이 안 되면 [트러블슈팅](./troubleshooting.md)을 확인합니다.
 
----
-
-이전: [5분 빠른 시작](./quick-start.md)
-다음: [초기 연결 확인](./getting-started.md)

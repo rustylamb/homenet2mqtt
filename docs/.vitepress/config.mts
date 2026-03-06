@@ -43,8 +43,7 @@ export default defineConfig({
             { text: "스크립트", link: "/guide/scripts" },
             { text: "갤러리", link: "/guide/gallery" },
             { text: "성능 최적화", link: "/guide/optimization" },
-            { text: "트러블슈팅", link: "/guide/troubleshooting" },
-            { text: "변경사항", link: "/guide/breaking-changes" }
+            { text: "트러블슈팅", link: "/guide/troubleshooting" }
           ]
         }
       ],
@@ -99,31 +98,15 @@ export default defineConfig({
           ]
         }
       ],
-      "/guide/": [
-        {
-          text: "Introduction",
-          items: [
-            { text: "Introduction", link: "/guide/introduction" },
-            { text: "Getting Started", link: "/guide/getting-started" },
-            { text: "Troubleshooting", link: "/guide/troubleshooting" }
-          ]
-        },
-        {
-          text: "Advanced",
-          items: [
-            { text: "Automation", link: "/guide/automation" },
-            { text: "CEL Guide", link: "/guide/cel-guide" },
-            { text: "Scripts", link: "/guide/scripts" },
-            { text: "Entity Examples", link: "/guide/entity-examples" },
-            { text: "Gallery", link: "/guide/gallery" },
-            { text: "Optimization", link: "/guide/optimization" }
-          ]
-        }
-      ]
+
     },
 
     socialLinks: [
       { icon: "github", link: "https://github.com/wooooooooooook/homenet2mqtt" }
-    ]
+    ],
+
+    search: {
+      provider: 'local'
+    }
   }
 })
