@@ -35,6 +35,7 @@ export default defineConfig({
           text: "운영 가이드",
           items: [
             { text: "초기 연결 확인", link: "/guide/getting-started" },
+            { text: "환경변수 레퍼런스", link: "/guide/environment-variables" },
             { text: "고급 설정", link: "/guide/advanced-setup" },
             { text: "자동화", link: "/guide/automation" },
             { text: "엔티티 예제", link: "/guide/entity-examples" },

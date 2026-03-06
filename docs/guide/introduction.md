@@ -11,7 +11,8 @@
 1. [5분 빠른 시작](./quick-start.md)
 2. [Home Assistant Add-on 설치](./install-addon.md) 또는 [Docker 설치](./install-docker.md)
 3. [초기 연결 확인](./getting-started.md)
-4. [트러블슈팅](./troubleshooting.md)
+4. [환경변수 레퍼런스](./environment-variables.md)
+5. [트러블슈팅](./troubleshooting.md)
 
 ## Homenet2MQTT란?
 

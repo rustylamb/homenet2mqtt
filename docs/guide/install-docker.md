@@ -40,6 +40,8 @@ services:
 
 > USB Serial 장치를 쓸 경우 `devices`에 `/dev/ttyUSB0:/dev/ttyUSB0` 매핑을 추가하세요.
 
+> 환경변수 상세 설명은 [환경변수 레퍼런스](./environment-variables.md)를 참고하세요.
+
 ## 실행
 
 ```bash
