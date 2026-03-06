@@ -74,8 +74,7 @@ export default defineConfig({
             { text: "Scripts", link: "/guide/scripts" },
             { text: "Entity Examples", link: "/guide/entity-examples" },
             { text: "Gallery", link: "/guide/gallery" },
-            { text: "Optimization", link: "/guide/optimization" },
-            { text: "Breaking Changes", link: "/guide/breaking-changes" }
+            { text: "Optimization", link: "/guide/optimization" }
           ]
         }
       ]
