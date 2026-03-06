@@ -248,9 +248,9 @@ export function createGalleryRoutes(ctx: GalleryRoutesContext): Router {
       const configForPort =
         portId !== undefined
           ? (currentConfigs.find((config, index) => {
-              if (!config.serial) return false;
-              return normalizePortId(config.serial.portId, index) === portId;
-            }) ?? null)
+            if (!config.serial) return false;
+            return normalizePortId(config.serial.portId, index) === portId;
+          }) ?? null)
           : null;
 
       // Get packet dictionary and unmatched packets (filtered by portId if provided)
@@ -448,7 +448,7 @@ export function createGalleryRoutes(ctx: GalleryRoutesContext): Router {
           >[];
           const existingListMap = new Map<string, any>();
           existingList.forEach((e) => {
-            if (e?.id) existingListMap.set(e.id, e);
+            if (e?.id && typeof e.id === 'string') existingListMap.set(e.id, e);
           });
 
           for (const entity of entities) {
