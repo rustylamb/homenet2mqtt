@@ -38,7 +38,7 @@ describe('Romanize Utility', () => {
 
     it('should convert Korean names to safe lowercase snake_case IDs', () => {
       expect(toEntityId('거실 조명')).toBe('geosil_jomyeong');
-      expect(toEntityId('안방 에어컨')).toBe('anbang_eeokon');
+      expect(toEntityId('안방 에어컨')).toBe('anbang_eeokeon');
     });
 
     it('should handle English names and spaces', () => {

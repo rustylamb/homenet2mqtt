@@ -49,14 +49,21 @@ describe('createSerialPortConnection', () => {
 
       vi.mocked(ReconnectingTcpSocket).mockImplementation(() => mockSocket);
 
-      const result = await createSerialPortConnection('192.168.1.100:8888', mockSerialConfig as any);
+      const result = await createSerialPortConnection(
+        '192.168.1.100:8888',
+        mockSerialConfig as any,
+      );
 
       expect(serialConnection.isTcpConnection).toHaveBeenCalledWith('192.168.1.100:8888');
-      expect(ReconnectingTcpSocket).toHaveBeenCalledWith('192.168.1.100', 8888, expect.objectContaining({
-        initialDelayMs: 1000,
-        maxDelayMs: 30000,
-        connectionTimeoutMs: 5000,
-      }));
+      expect(ReconnectingTcpSocket).toHaveBeenCalledWith(
+        '192.168.1.100',
+        8888,
+        expect.objectContaining({
+          initialDelayMs: 1000,
+          maxDelayMs: 30000,
+          connectionTimeoutMs: 5000,
+        }),
+      );
       expect(mockSocket.connect).toHaveBeenCalledTimes(1);
       expect(result).toBe(mockSocket);
     });
@@ -64,7 +71,8 @@ describe('createSerialPortConnection', () => {
     it('should retry connection on failure and succeed', async () => {
       vi.useFakeTimers();
       const mockSocket = {
-        connect: vi.fn()
+        connect: vi
+          .fn()
           .mockRejectedValueOnce(new Error('Connection failed'))
           .mockResolvedValue(undefined),
         destroy: vi.fn(),
@@ -72,7 +80,10 @@ describe('createSerialPortConnection', () => {
 
       vi.mocked(ReconnectingTcpSocket).mockImplementation(() => mockSocket);
 
-      const connectionPromise = createSerialPortConnection('192.168.1.100:8888', mockSerialConfig as any);
+      const connectionPromise = createSerialPortConnection(
+        '192.168.1.100:8888',
+        mockSerialConfig as any,
+      );
 
       // Advance timers to trigger retry
       await vi.advanceTimersByTimeAsync(2000);
@@ -92,12 +103,19 @@ describe('createSerialPortConnection', () => {
 
       vi.mocked(ReconnectingTcpSocket).mockImplementation(() => mockSocket);
 
-      const connectionPromise = createSerialPortConnection('192.168.1.100:8888', mockSerialConfig as any);
+      // Wrap in Promise.allSettled immediately so the rejection is always handled
+      const connectionPromise = createSerialPortConnection(
+        '192.168.1.100:8888',
+        mockSerialConfig as any,
+      );
+      const settledPromise = Promise.allSettled([connectionPromise]);
 
       // Advance timers to trigger all retries
       await vi.advanceTimersByTimeAsync(10000);
 
-      await expect(connectionPromise).rejects.toThrow('Connection failed');
+      const [result] = await settledPromise;
+      expect(result.status).toBe('rejected');
+      expect((result as PromiseRejectedResult).reason.message).toBe('Connection failed');
       expect(mockSocket.connect).toHaveBeenCalledTimes(4);
       expect(mockSocket.destroy).toHaveBeenCalled();
     });
@@ -115,20 +133,22 @@ describe('createSerialPortConnection', () => {
       expect(ReconnectingTcpSocket).toHaveBeenCalledWith(
         expect.any(String),
         expect.any(Number),
-        expect.objectContaining({ connectionTimeoutMs: 10000 })
+        expect.objectContaining({ connectionTimeoutMs: 10000 }),
       );
     });
 
     it('should not retry if timeoutMs is provided', async () => {
-        const mockSocket = {
-            connect: vi.fn().mockRejectedValue(new Error('Fail')),
-            destroy: vi.fn(),
-        } as unknown as ReconnectingTcpSocket;
+      const mockSocket = {
+        connect: vi.fn().mockRejectedValue(new Error('Fail')),
+        destroy: vi.fn(),
+      } as unknown as ReconnectingTcpSocket;
 
-        vi.mocked(ReconnectingTcpSocket).mockImplementation(() => mockSocket);
+      vi.mocked(ReconnectingTcpSocket).mockImplementation(() => mockSocket);
 
-        await expect(createSerialPortConnection('host:1234', mockSerialConfig as any, 500)).rejects.toThrow('Fail');
-        expect(mockSocket.connect).toHaveBeenCalledTimes(1);
+      await expect(
+        createSerialPortConnection('host:1234', mockSerialConfig as any, 500),
+      ).rejects.toThrow('Fail');
+      expect(mockSocket.connect).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -160,21 +180,24 @@ describe('createSerialPortConnection', () => {
     });
 
     it('should pass timeoutMs to waitForSerialDevice', async () => {
-        const mockSerialPort = {} as SerialPort;
-        vi.mocked(SerialPort).mockImplementation(() => mockSerialPort);
-        vi.mocked(serialConnection.waitForSerialDevice).mockResolvedValue(undefined);
-        vi.mocked(serialConnection.openSerialPort).mockResolvedValue(undefined);
+      const mockSerialPort = {} as SerialPort;
+      vi.mocked(SerialPort).mockImplementation(() => mockSerialPort);
+      vi.mocked(serialConnection.waitForSerialDevice).mockResolvedValue(undefined);
+      vi.mocked(serialConnection.openSerialPort).mockResolvedValue(undefined);
 
-        await createSerialPortConnection('/dev/ttyUSB0', mockSerialConfig as any, 5000);
+      await createSerialPortConnection('/dev/ttyUSB0', mockSerialConfig as any, 5000);
 
-        expect(serialConnection.waitForSerialDevice).toHaveBeenCalledWith('/dev/ttyUSB0', 5000);
+      expect(serialConnection.waitForSerialDevice).toHaveBeenCalledWith('/dev/ttyUSB0', 5000);
     });
 
     it('should throw if waitForSerialDevice fails', async () => {
-      vi.mocked(serialConnection.waitForSerialDevice).mockRejectedValue(new Error('Device not found'));
+      vi.mocked(serialConnection.waitForSerialDevice).mockRejectedValue(
+        new Error('Device not found'),
+      );
 
-      await expect(createSerialPortConnection('/dev/ttyUSB0', mockSerialConfig as any))
-        .rejects.toThrow('Device not found');
+      await expect(
+        createSerialPortConnection('/dev/ttyUSB0', mockSerialConfig as any),
+      ).rejects.toThrow('Device not found');
 
       expect(SerialPort).not.toHaveBeenCalled();
     });
@@ -185,8 +208,9 @@ describe('createSerialPortConnection', () => {
       vi.mocked(serialConnection.waitForSerialDevice).mockResolvedValue(undefined);
       vi.mocked(serialConnection.openSerialPort).mockRejectedValue(new Error('Access denied'));
 
-      await expect(createSerialPortConnection('/dev/ttyUSB0', mockSerialConfig as any))
-        .rejects.toThrow('Access denied');
+      await expect(
+        createSerialPortConnection('/dev/ttyUSB0', mockSerialConfig as any),
+      ).rejects.toThrow('Access denied');
     });
   });
 });

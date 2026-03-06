@@ -195,7 +195,7 @@ export const normalizeFrontendSettings = (
       showInternal:
         typeof value?.dashboard?.showInternal === 'boolean'
           ? value.dashboard.showInternal
-          : DEFAULT_FRONTEND_SETTINGS.dashboard?.showInternal ?? false,
+          : (DEFAULT_FRONTEND_SETTINGS.dashboard?.showInternal ?? false),
     },
   };
 };

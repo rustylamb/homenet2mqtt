@@ -209,7 +209,11 @@ export const normalizeDeviceState = (
     }
 
     if (!normalized.color_temp_kelvin && entityConfig.state_color_temp_kelvin) {
-      const colorTempKelvin = extractValue(payload, entityConfig.state_color_temp_kelvin, headerLen);
+      const colorTempKelvin = extractValue(
+        payload,
+        entityConfig.state_color_temp_kelvin,
+        headerLen,
+      );
       if (colorTempKelvin !== null) {
         normalized.color_temp_kelvin = colorTempKelvin;
       }

@@ -240,5 +240,4 @@ describe('Climate Command Packet Generation', () => {
     );
     expect(mockSerialPort.write).toHaveBeenCalled();
   });
-
 });

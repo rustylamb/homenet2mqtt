@@ -248,9 +248,9 @@ export function createGalleryRoutes(ctx: GalleryRoutesContext): Router {
       const configForPort =
         portId !== undefined
           ? (currentConfigs.find((config, index) => {
-            if (!config.serial) return false;
-            return normalizePortId(config.serial.portId, index) === portId;
-          }) ?? null)
+              if (!config.serial) return false;
+              return normalizePortId(config.serial.portId, index) === portId;
+            }) ?? null)
           : null;
 
       // Get packet dictionary and unmatched packets (filtered by portId if provided)

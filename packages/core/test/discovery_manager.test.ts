@@ -301,5 +301,4 @@ describe('DiscoveryManager', () => {
     expect(payload.min_mireds).toBeUndefined();
     expect(payload.max_mireds).toBeUndefined();
   });
-
 });
