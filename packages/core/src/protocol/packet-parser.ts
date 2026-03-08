@@ -472,7 +472,7 @@ export class PacketParser {
               break;
             }
 
-            this.logChecksumFailure('A', currentOffset, packetLen);
+            this.logChecksumFailure('A', this.buffer, currentOffset, packetLen);
 
             // If verification failed, try next byte
             if (useSlidingWindow) {
@@ -615,7 +615,7 @@ export class PacketParser {
                 break;
               }
 
-              this.logChecksumFailure('B', this.readOffset, len);
+              this.logChecksumFailure('B', this.buffer, this.readOffset, len);
 
               // Footer found but checksum failed. Continue searching after this footer.
               searchIdx = foundIdx + 1;
@@ -675,7 +675,7 @@ export class PacketParser {
                 break;
               }
 
-              this.logChecksumFailure('B', this.readOffset, len);
+              this.logChecksumFailure('B', this.buffer, this.readOffset, len);
 
               searchIdx = foundIdx + 1;
             }
@@ -701,7 +701,7 @@ export class PacketParser {
                 break;
               }
 
-              this.logChecksumFailure('B', this.readOffset, len);
+              this.logChecksumFailure('B', this.buffer, this.readOffset, len);
 
               // Footer found but checksum failed. Continue searching after this footer.
               searchIdx = foundIdx + 1;
@@ -761,7 +761,7 @@ export class PacketParser {
                   matchFound = true;
                 }
                 if (!matchFound) {
-                  this.logChecksumFailure('C', this.readOffset, dynamicLen);
+                  this.logChecksumFailure('C', this.buffer, this.readOffset, dynamicLen);
                 }
                 // If checksum failed or header invalid, treat as no match (will shift 1 byte later)
                 if (matchFound) continue;
@@ -1051,12 +1051,20 @@ export class PacketParser {
     return this.maxLength;
   }
 
-  private logChecksumFailure(strategy: 'A' | 'B' | 'C', offset: number, length: number): void {
+  private logChecksumFailure(
+    strategy: 'A' | 'B' | 'C',
+    buffer: Buffer,
+    offset: number,
+    length: number,
+  ): void {
+    const packet = Buffer.from(buffer.subarray(offset, offset + length));
+
     logger.debug(
       {
         strategy,
         offset,
         length,
+        packet,
       },
       '[PacketParser] Checksum validation failed for packet candidate',
     );

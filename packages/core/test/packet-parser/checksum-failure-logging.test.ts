@@ -27,10 +27,11 @@ describe('PacketParser checksum failure logging', () => {
       rx_checksum: 'add',
     });
 
-    parser.parseChunk(Buffer.from([0xaa, 0x01, 0x02, 0x00, 0x00]));
+    const packet = Buffer.from([0xaa, 0x01, 0x02, 0x00, 0x00]);
+    parser.parseChunk(packet);
 
     expect(debugMock).toHaveBeenCalledWith(
-      expect.objectContaining({ strategy: 'A', offset: 0, length: 5 }),
+      expect.objectContaining({ strategy: 'A', offset: 0, length: 5, packet }),
       '[PacketParser] Checksum validation failed for packet candidate',
     );
   });
@@ -42,10 +43,11 @@ describe('PacketParser checksum failure logging', () => {
       rx_checksum: 'add',
     });
 
-    parser.parseChunk(Buffer.from([0xaa, 0x01, 0x02, 0x00, 0x55]));
+    const packet = Buffer.from([0xaa, 0x01, 0x02, 0x00, 0x55]);
+    parser.parseChunk(packet);
 
     expect(debugMock).toHaveBeenCalledWith(
-      expect.objectContaining({ strategy: 'B', offset: 0, length: 5 }),
+      expect.objectContaining({ strategy: 'B', offset: 0, length: 5, packet }),
       '[PacketParser] Checksum validation failed for packet candidate',
     );
   });
@@ -57,10 +59,11 @@ describe('PacketParser checksum failure logging', () => {
       rx_length_expr: '5',
     });
 
-    parser.parseChunk(Buffer.from([0xaa, 0x01, 0x02, 0x00, 0x00]));
+    const packet = Buffer.from([0xaa, 0x01, 0x02, 0x00, 0x00]);
+    parser.parseChunk(packet);
 
     expect(debugMock).toHaveBeenCalledWith(
-      expect.objectContaining({ strategy: 'C', offset: 0, length: 5 }),
+      expect.objectContaining({ strategy: 'C', offset: 0, length: 5, packet }),
       '[PacketParser] Checksum validation failed for packet candidate',
     );
   });
