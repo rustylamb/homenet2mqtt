@@ -472,6 +472,8 @@ export class PacketParser {
               break;
             }
 
+            this.logChecksumFailure('A', currentOffset, packetLen);
+
             // If verification failed, try next byte
             if (useSlidingWindow) {
               const leavingByte = this.buffer[currentOffset + windowStartRel];
@@ -613,6 +615,8 @@ export class PacketParser {
                 break;
               }
 
+              this.logChecksumFailure('B', this.readOffset, len);
+
               // Footer found but checksum failed. Continue searching after this footer.
               searchIdx = foundIdx + 1;
             }
@@ -671,6 +675,8 @@ export class PacketParser {
                 break;
               }
 
+              this.logChecksumFailure('B', this.readOffset, len);
+
               searchIdx = foundIdx + 1;
             }
           } else {
@@ -694,6 +700,8 @@ export class PacketParser {
                 matchFound = true;
                 break;
               }
+
+              this.logChecksumFailure('B', this.readOffset, len);
 
               // Footer found but checksum failed. Continue searching after this footer.
               searchIdx = foundIdx + 1;
@@ -751,6 +759,9 @@ export class PacketParser {
                   this.consumeBytes(dynamicLen);
                   this.lastScannedLength = 0;
                   matchFound = true;
+                }
+                if (!matchFound) {
+                  this.logChecksumFailure('C', this.readOffset, dynamicLen);
                 }
                 // If checksum failed or header invalid, treat as no match (will shift 1 byte later)
                 if (matchFound) continue;
@@ -1038,6 +1049,17 @@ export class PacketParser {
 
   private getMaxLength(): number | null {
     return this.maxLength;
+  }
+
+  private logChecksumFailure(strategy: 'A' | 'B' | 'C', offset: number, length: number): void {
+    logger.debug(
+      {
+        strategy,
+        offset,
+        length,
+      },
+      '[PacketParser] Checksum validation failed for packet candidate',
+    );
   }
 
   private isLengthAllowed(length: number): boolean {
