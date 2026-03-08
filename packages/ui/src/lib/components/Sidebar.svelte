@@ -19,6 +19,8 @@
 
   let showSponsorModal = $state(false);
   let isMobile = $state(false);
+  const sponsorUrl = 'https://homenet2mqtt-docs.vercel.app/sponsor.html';
+  const docsUrl = 'https://homenet2mqtt-docs.vercel.app/';
 
   onMount(() => {
     isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
@@ -80,6 +82,16 @@
       <span class="icon" aria-hidden="true">⚙️</span>
       <span class="label">{$t('sidebar.settings')}</span>
     </button>
+    <a
+      class="nav-item"
+      href={docsUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      onclick={() => onClose?.()}
+    >
+      <span class="icon" aria-hidden="true">📚</span>
+      <span class="label">{$t('sidebar.docs')}</span>
+    </a>
   </nav>
 
   <div class="sponsor-panel">
@@ -108,7 +120,14 @@
         onclick={() => (showSponsorModal = false)}>✕</button
       >
       <img src="./kakaopay-qr.png" alt="카카오페이 후원 QR코드" class="sponsor-modal-img" />
-      <p class="sponsor-modal-label">homenet2mqtt 개발자 후원하기</p>
+      <p class="sponsor-modal-label">
+        <a
+          href={sponsorUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="sponsor-modal-text-link">homenet2mqtt 개발자 후원하기</a
+        >
+      </p>
     </div>
   </div>
 {/if}
@@ -165,6 +184,7 @@
     font-family: inherit;
     font-size: 0.95rem;
     outline: none;
+    text-decoration: none;
   }
 
   .nav-item:hover {
@@ -316,20 +336,14 @@
     color: #e2e8f0;
   }
 
-  .sponsor-modal-link {
-    display: inline-block;
-    padding: 9px 20px;
-    border-radius: 8px;
-    background: #fee500;
-    color: #1a1a1a;
-    font-size: 13px;
-    font-weight: 700;
-    text-decoration: none;
-    transition: opacity 0.15s;
+  .sponsor-modal-text-link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 
-  .sponsor-modal-link:hover {
-    opacity: 0.85;
+  .sponsor-modal-text-link:hover {
+    color: #93c5fd;
   }
 
   @keyframes sponsorFadeIn {
