@@ -14,31 +14,42 @@
 homenet_bridge:
   serial:
     path: /dev/ttyUSB0
-    baudrate: 9600
-    dataBits: 8
-    stopBits: 1
+    baud_rate: 9600
+    data_bits: 8
+    stop_bits: 1
     parity: none
     portId: main
 
   packet_defaults:
-    header: 'AA55'
-    footer: '0D0D'
+    rx_header: [0xAA, 0x55]
+    rx_footer: [0x0D, 0x0D]
+    tx_header: [0xAA, 0x55]
+    tx_footer: [0x0D, 0x0D]
+    rx_checksum: add_no_header
+    tx_checksum: add_no_header
 
-  entities:
-    - type: switch
-      id: livingroom_light
+  switch:
+    - id: livingroom_light
       name: 거실 조명
       state:
-        topic: homenet2mqtt/state/livingroom/light
-      command:
-        topic: homenet2mqtt/command/livingroom/light
+        data: [0x01, 0x00]
+      state_on:
+        offset: 0
+        data: [0x01]
+      state_off:
+        offset: 0
+        data: [0x00]
+      command_on:
+        data: [0x01, 0x01]
+      command_off:
+        data: [0x01, 0x00]
 ```
 
 ## 필수 확인 포인트
 
 - `serial.path`를 실제 연결 장치에 맞게 변경하세요.
-- `header`, `footer`는 제조사/프로토콜에 맞게 조정해야 합니다.
-- `state.topic`, `command.topic`은 운영 토픽 규칙과 맞추세요.
+- `rx_header`, `rx_footer` (송신 시 `tx_header`, `tx_footer`)는 제조사/프로토콜에 맞게 조정해야 합니다.
+- `state`, `command` 스키마는 장비의 패킷 구조에 맞게 수정하세요.
 
 ## 다음 단계
 
