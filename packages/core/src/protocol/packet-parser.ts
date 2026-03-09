@@ -472,6 +472,8 @@ export class PacketParser {
               break;
             }
 
+            this.logChecksumFailure('A', this.buffer, currentOffset, packetLen);
+
             // If verification failed, try next byte
             if (useSlidingWindow) {
               const leavingByte = this.buffer[currentOffset + windowStartRel];
@@ -613,6 +615,8 @@ export class PacketParser {
                 break;
               }
 
+              this.logChecksumFailure('B', this.buffer, this.readOffset, len);
+
               // Footer found but checksum failed. Continue searching after this footer.
               searchIdx = foundIdx + 1;
             }
@@ -671,6 +675,8 @@ export class PacketParser {
                 break;
               }
 
+              this.logChecksumFailure('B', this.buffer, this.readOffset, len);
+
               searchIdx = foundIdx + 1;
             }
           } else {
@@ -694,6 +700,8 @@ export class PacketParser {
                 matchFound = true;
                 break;
               }
+
+              this.logChecksumFailure('B', this.buffer, this.readOffset, len);
 
               // Footer found but checksum failed. Continue searching after this footer.
               searchIdx = foundIdx + 1;
@@ -751,6 +759,9 @@ export class PacketParser {
                   this.consumeBytes(dynamicLen);
                   this.lastScannedLength = 0;
                   matchFound = true;
+                }
+                if (!matchFound) {
+                  this.logChecksumFailure('C', this.buffer, this.readOffset, dynamicLen);
                 }
                 // If checksum failed or header invalid, treat as no match (will shift 1 byte later)
                 if (matchFound) continue;
@@ -1038,6 +1049,156 @@ export class PacketParser {
 
   private getMaxLength(): number | null {
     return this.maxLength;
+  }
+
+  private formatChecksumValue(value: number | number[] | null): string {
+    if (value === null) return 'unknown';
+    if (Array.isArray(value)) {
+      return `[${value.map((v) => `0x${v.toString(16).padStart(2, '0')}`).join(', ')}]`;
+    }
+    return `0x${value.toString(16).padStart(2, '0')}`;
+  }
+
+  private getReceivedChecksumValue(
+    buffer: Buffer,
+    offset: number,
+    length: number,
+  ): number | number[] | null {
+    if (!this.isLengthAllowed(length) || this.isChecksumNone) {
+      return null;
+    }
+
+    if (this.defaults.rx_checksum) {
+      const checksumIndex =
+        this.footerLength > 0 ? offset + length - 1 - this.footerLength : offset + length - 1;
+      return buffer[checksumIndex];
+    }
+
+    if (this.defaults.rx_checksum2) {
+      const checksumStart = offset + length - 2 - this.footerLength;
+      if (checksumStart < offset + this.headerLength) return null;
+      return [buffer[checksumStart], buffer[checksumStart + 1]];
+    }
+
+    return null;
+  }
+
+  private getCalculatedChecksumValue(
+    buffer: Buffer,
+    offset: number,
+    length: number,
+  ): number | number[] | null {
+    if (!this.isLengthAllowed(length) || this.isChecksumNone) {
+      return null;
+    }
+
+    if (this.defaults.rx_checksum) {
+      const dataEnd =
+        this.footerLength > 0 ? offset + length - 1 - this.footerLength : offset + length - 1;
+
+      if (typeof this.defaults.rx_checksum === 'string') {
+        const checksumOrScript = this.defaults.rx_checksum as string;
+
+        if (this.isStandard1Byte) {
+          if (this.checksumFn && checksumOrScript === this.cachedChecksumType) {
+            const start = offset + this.checksumStartAdjust;
+            return this.checksumFn(buffer, start, dataEnd);
+          }
+
+          return calculateChecksumFromBuffer(
+            buffer,
+            checksumOrScript as ChecksumType,
+            this.headerLength,
+            dataEnd - offset,
+            offset,
+          );
+        }
+
+        if (this.preparedChecksum) {
+          const got = this.preparedChecksum.execute({
+            data: buffer.subarray(offset, dataEnd),
+            len: dataEnd - offset,
+          });
+          return typeof got === 'number' ? got : null;
+        }
+
+        const got = CelExecutor.shared().execute(checksumOrScript, {
+          data: buffer.subarray(offset, dataEnd),
+          len: dataEnd - offset,
+        });
+        return typeof got === 'number' ? got : null;
+      }
+
+      return null;
+    }
+
+    if (this.defaults.rx_checksum2) {
+      const checksumStart = offset + length - 2 - this.footerLength;
+      if (checksumStart < offset + this.headerLength) {
+        return null;
+      }
+
+      if (typeof this.defaults.rx_checksum2 === 'string') {
+        const checksumOrScript = this.defaults.rx_checksum2 as string;
+
+        if (this.isStandard2Byte) {
+          if (checksumOrScript === 'xor_add') {
+            let crc = 0;
+            let temp = 0;
+            for (let i = offset; i < checksumStart; i++) {
+              const b = buffer[i];
+              crc += b;
+              temp ^= b;
+            }
+            return [temp & 0xff, (crc + (temp & 0xff)) & 0xff];
+          }
+          return null;
+        }
+
+        if (this.preparedChecksum2) {
+          const got = this.preparedChecksum2.execute({
+            data: buffer.subarray(offset, checksumStart),
+            len: checksumStart - offset,
+          });
+          return Array.isArray(got) && got.length === 2 ? got.map((v) => Number(v)) : null;
+        }
+
+        const got = CelExecutor.shared().execute(checksumOrScript, {
+          data: buffer.subarray(offset, checksumStart),
+          len: checksumStart - offset,
+        });
+        return Array.isArray(got) && got.length === 2 ? got.map((v) => Number(v)) : null;
+      }
+
+      return null;
+    }
+
+    return null;
+  }
+
+  private logChecksumFailure(
+    strategy: 'A' | 'B' | 'C',
+    buffer: Buffer,
+    offset: number,
+    length: number,
+  ): void {
+    const packet = Buffer.from(buffer.subarray(offset, offset + length));
+    const expected = this.getCalculatedChecksumValue(buffer, offset, length);
+    const got = this.getReceivedChecksumValue(buffer, offset, length);
+    const expectedText = this.formatChecksumValue(expected);
+    const gotText = this.formatChecksumValue(got);
+
+    logger.debug(
+      {
+        strategy,
+        offset,
+        length,
+        packet,
+        expected,
+        got,
+      },
+      `[PacketParser] Checksum validation failed for packet candidate (expected: ${expectedText}, got: ${gotText})`,
+    );
   }
 
   private isLengthAllowed(length: number): boolean {
