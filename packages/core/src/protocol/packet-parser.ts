@@ -1059,7 +1059,7 @@ export class PacketParser {
     return `0x${value.toString(16).padStart(2, '0')}`;
   }
 
-  private getExpectedChecksumValue(
+  private getReceivedChecksumValue(
     buffer: Buffer,
     offset: number,
     length: number,
@@ -1183,8 +1183,8 @@ export class PacketParser {
     length: number,
   ): void {
     const packet = Buffer.from(buffer.subarray(offset, offset + length));
-    const expected = this.getExpectedChecksumValue(buffer, offset, length);
-    const got = this.getCalculatedChecksumValue(buffer, offset, length);
+    const expected = this.getCalculatedChecksumValue(buffer, offset, length);
+    const got = this.getReceivedChecksumValue(buffer, offset, length);
     const expectedText = this.formatChecksumValue(expected);
     const gotText = this.formatChecksumValue(got);
 

@@ -36,10 +36,10 @@ describe('PacketParser checksum failure logging', () => {
         offset: 0,
         length: 5,
         packet,
-        expected: 0x00,
-        got: 0xad,
+        expected: 0xad,
+        got: 0x00,
       }),
-      expect.stringContaining('expected: 0x00, got: 0xad'),
+      expect.stringContaining('expected: 0xad, got: 0x00'),
     );
   });
 
@@ -59,10 +59,10 @@ describe('PacketParser checksum failure logging', () => {
         offset: 0,
         length: 5,
         packet,
-        expected: 0x00,
-        got: 0xad,
+        expected: 0xad,
+        got: 0x00,
       }),
-      expect.stringContaining('expected: 0x00, got: 0xad'),
+      expect.stringContaining('expected: 0xad, got: 0x00'),
     );
   });
 
@@ -82,10 +82,10 @@ describe('PacketParser checksum failure logging', () => {
         offset: 0,
         length: 5,
         packet,
-        expected: 0x00,
-        got: 0xad,
+        expected: 0xad,
+        got: 0x00,
       }),
-      expect.stringContaining('expected: 0x00, got: 0xad'),
+      expect.stringContaining('expected: 0xad, got: 0x00'),
     );
   });
 });
