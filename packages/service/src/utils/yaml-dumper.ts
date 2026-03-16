@@ -1,4 +1,5 @@
 import yaml from 'js-yaml';
+import { ENTITY_TYPE_KEYS } from './constants.js';
 
 class HexSeqWrapper {
   constructor(public items: any[]) {}
@@ -36,6 +37,12 @@ function markHex(obj: any): any {
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const value = obj[key];
+
+        // Skip 'type' or 'unique_id' if it's one of the entity types (redundant in YAML)
+        if (key === 'unique_id' || (key === 'type' && ENTITY_TYPE_KEYS.includes(value as any))) {
+          continue;
+        }
+
         // Identify keys that should contain byte arrays and convert the ARRAY to HexSeqWrapper
         if (
           (key.startsWith('state') ||
@@ -47,14 +54,7 @@ function markHex(obj: any): any {
             key === 'data') &&
           Array.isArray(value)
         ) {
-          // Verify if it contains numbers?
-          // If it contains only numbers, we wrap it.
-          // If it contains objects (e.g. nested schema), we probably shouldn't wrap the whole array as hex seq string?
-          // But user said "hex로 표시하는배열" (arrays displayed as hex).
-          // Byte arrays usually contain numbers.
-          const isNumericArray = value.every(
-            (item) => typeof item === 'number' || typeof item === 'string', // Allow strings if already hex? No, we transform.
-          );
+          const isNumericArray = value.every((item) => typeof item === 'number');
 
           if (isNumericArray && value.length > 0) {
             newObj[key] = new HexSeqWrapper(value);
