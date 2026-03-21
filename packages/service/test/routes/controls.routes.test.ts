@@ -83,3 +83,56 @@ describe('Controls Routes - Optimistic Switch', () => {
     expect(mockBridge.bridge.executeCommand).toHaveBeenCalledWith('opt_switch', 'on', undefined);
   });
 });
+
+describe('Controls Routes - Climate Temperature Parsing', () => {
+  it('should handle numeric visual temperature bounds without crashing', async () => {
+    const mockRateLimiter = {
+      check: vi.fn().mockReturnValue(true),
+    } as unknown as RateLimiter;
+
+    const climateConfig = {
+      climate: [
+        {
+          id: 'living_room_climate',
+          name: 'Living Room Climate',
+          command_temperature: {},
+          visual: {
+            min_temperature: 18,
+            max_temperature: 30,
+            temperature_step: 0.5,
+          },
+        },
+      ],
+    };
+
+    const mockCtx = {
+      commandRateLimiter: mockRateLimiter,
+      configRateLimiter: mockRateLimiter,
+      getBridges: vi.fn().mockReturnValue([]),
+      getCurrentConfigs: vi.fn().mockReturnValue([climateConfig]),
+      getCurrentConfigFiles: vi.fn().mockReturnValue(['homenet_bridge.yaml']),
+      getCurrentRawConfigs: vi.fn().mockReturnValue([climateConfig]),
+      getCurrentConfigStatuses: vi.fn().mockReturnValue(['started' satisfies ConfigStatus]),
+      getCurrentConfigErrors: vi.fn().mockReturnValue([null satisfies BridgeErrorPayload | null]),
+      configDir: '/tmp',
+      setCurrentConfigs: vi.fn(),
+      setCurrentRawConfigs: vi.fn(),
+      rebuildPortMappings: vi.fn(),
+    } as unknown as ControlsRoutesContext;
+
+    const app = express();
+    app.use(express.json());
+    app.use('/', createControlsRoutes(mockCtx));
+
+    const response = await request(app).get('/api/commands');
+    expect(response.status).toBe(200);
+
+    const tempCommand = response.body.commands.find(
+      (c: any) => c.entityId === 'living_room_climate' && c.commandName === 'command_temperature',
+    );
+    expect(tempCommand).toBeDefined();
+    expect(tempCommand.min).toBe(18);
+    expect(tempCommand.max).toBe(30);
+    expect(tempCommand.step).toBe(0.5);
+  });
+});

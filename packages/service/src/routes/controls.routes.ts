@@ -124,8 +124,23 @@ export function createControlsRoutes(ctx: ControlsRoutesContext): Router {
               | { min_temperature?: string; max_temperature?: string; temperature_step?: string }
               | undefined;
             if (visual && key === 'command_temperature') {
-              const parseTemp = (val?: string) =>
-                val ? parseInt(val.replace(/[^\d]/g, '')) : undefined;
+              const parseTemp = (val?: string | number) => {
+                if (typeof val === 'number') {
+                  return Number.isFinite(val) ? val : undefined;
+                }
+
+                if (typeof val !== 'string' || val.length === 0) {
+                  return undefined;
+                }
+
+                const normalized = val.replace(/[^\d.-]/g, '');
+                if (!normalized) {
+                  return undefined;
+                }
+
+                const parsed = Number.parseFloat(normalized);
+                return Number.isFinite(parsed) ? parsed : undefined;
+              };
               cmdInfo.min = parseTemp(visual.min_temperature) ?? 5;
               cmdInfo.max = parseTemp(visual.max_temperature) ?? 40;
               cmdInfo.step = parseTemp(visual.temperature_step) ?? 1;
