@@ -357,7 +357,7 @@ describe('DiscoveryManager', () => {
     expect(payload.temperature_unit).toBe('F');
   });
 
-  it('climate에 unit_of_measurement가 있어도 discovery payload에는 포함하지 않는다', () => {
+  it('climate에 unit_of_measurement가 있어도 temperature_unit 결정에는 사용하지 않는다', () => {
     (mockConfig.climate![0] as any).unit_of_measurement = '°F';
     mockPublisher.publish.mockClear();
 
@@ -382,7 +382,7 @@ describe('DiscoveryManager', () => {
 
     const payload = JSON.parse(call[1]);
     expect(payload.unit_of_measurement).toBeUndefined();
-    expect(payload.temperature_unit).toBe('F');
+    expect(payload.temperature_unit).toBe('C');
   });
 
   it('라이트 색온도 Discovery는 kelvin 필드를 사용한다', () => {
