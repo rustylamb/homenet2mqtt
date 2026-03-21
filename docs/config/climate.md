@@ -91,6 +91,8 @@
     - 하위 호환: 기존 설정의 `unit_of_measurement: "°F"`/`"F"`/`"fahrenheit"`도 `F`로 해석
   - `min_temp`/`max_temp`/`temp_step`:
     - `visual.min_temperature`/`visual.max_temperature`/`visual.temperature_step`가 있으면 해당 값을 사용
+    - `visual` 값은 **number 사용이 원칙**이며, 단위를 포함한 string(`"23 °C"`)도 허용됩니다.
+    - string을 사용할 경우 숫자 부분만 파싱하며, 최종 단위 표시는 `temperature_unit`(또는 `unit_of_measurement` 해석 결과)를 따릅니다. (자동 단위 변환 없음)
     - 값이 없거나 파싱 불가 시 기본값 `min_temp: 15`, `max_temp: 30`, `temp_step: 1` 사용
 
 ## 예제: 온도·습도 설정
