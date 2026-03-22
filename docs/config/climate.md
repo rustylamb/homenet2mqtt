@@ -6,6 +6,13 @@
 - `state`: 이 엔티티가 대응하는 상태 패킷을 식별하는 서명.
 - **모드 중 최소 하나**: `state_off`, `state_heat`, `state_cool` 등의 모드 상태 정의가 최소 하나 있어야 Home Assistant에서 동작합니다. `state`만으로는 climate 엔티티가 정상 구성되지 않습니다.
 
+## 옵션 필드 (climate전용)
+- visual:
+  - min_temperature: climate엔티티의 온도 최소값 (기본값 5)
+  - max_temperature: 온도 최대값 (기본값 40)
+  - temperature_step: 온도설정 최소단위 (기본값 1)
+- temperature_unit: C또는 F, 온도 단위
+
 ## 옵션 필드 (상태)
 - 모드 감지: `state_off`, `state_heat`, `state_cool`, `state_fan_only`, `state_dry`, `state_auto`.
 - 온도: `state_temperature_current`(현재), `state_temperature_target`(설정값) — [`StateNumSchema`](./schemas.md#statenumschema).
