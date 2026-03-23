@@ -52,7 +52,6 @@ interface PortContext {
   lastValidPacketTimestamp: number | null;
   lastDataTimestamp: number | null;
   packetIntervals: number[];
-  validPacketIntervals: number[];
   serialIdleTimer: NodeJS.Timeout | null;
 }
 
@@ -874,7 +873,6 @@ export class HomeNetBridge extends EventEmitter {
         lastValidPacketTimestamp: null,
         lastDataTimestamp: this.getMonotonicMs(),
         packetIntervals: [],
-        validPacketIntervals: [],
         serialIdleTimer: null,
       };
 
@@ -885,14 +883,6 @@ export class HomeNetBridge extends EventEmitter {
         const interval =
           context.lastValidPacketTimestamp !== null ? now - context.lastValidPacketTimestamp : null;
         context.lastValidPacketTimestamp = now;
-
-        // Track valid packet intervals for stats calculation
-        if (interval !== null) {
-          context.validPacketIntervals.push(interval);
-          if (context.validPacketIntervals.length > 1000) {
-            context.validPacketIntervals.shift();
-          }
-        }
 
         const hexPacket = packet.toString('hex');
         eventBus.emit('raw-valid-packet', {
@@ -935,7 +925,6 @@ export class HomeNetBridge extends EventEmitter {
     logger.info({ portId: context.portId }, '[core] Starting raw packet listener.');
 
     context.lastValidPacketTimestamp = null;
-    context.validPacketIntervals = [];
     context.rawPacketListener = (data: Buffer) => {
       const now = this.getMonotonicMs();
 
@@ -1000,12 +989,11 @@ export class HomeNetBridge extends EventEmitter {
 
   private analyzeAndEmitPacketStats(context: PortContext) {
     const stats = this.calculateStatsForContext(context);
-    const validStats = this.calculateStatsForContext(context, true);
-    eventBus.emit('packet-interval-stats', { ...stats, valid: validStats });
+    eventBus.emit('packet-interval-stats', stats);
   }
 
-  private calculateStatsForContext(context: PortContext, validOnly: boolean = false) {
-    const intervals = validOnly ? [...context.validPacketIntervals] : [...context.packetIntervals];
+  private calculateStatsForContext(context: PortContext) {
+    const intervals = [...context.packetIntervals];
     // Do not clear the buffer; it's a rolling window managed in attachRawListener
 
     if (intervals.length === 0) {

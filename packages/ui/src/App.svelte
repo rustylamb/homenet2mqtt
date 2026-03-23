@@ -1047,19 +1047,13 @@
 
     const handlePacketStats = (data: PacketStats) => {
       if (data && data.portId) {
-        // When in 'valid' mode, use valid packet stats if available
-        let statsToStore: PacketStats;
-        if (rawPacketStreamMode === 'valid' && data.valid) {
-          // Use valid packet interval stats but keep portId and valid field
-          statsToStore = {
-            ...data.valid,
-            portId: data.portId,
-            valid: data.valid,
-          };
-        } else {
-          statsToStore = data;
+        // When in 'valid' mode, we turn off packet interval analysis.
+        if (rawPacketStreamMode === 'valid') {
+          packetStatsByPort.delete(data.portId);
+          packetStatsByPort = new Map(packetStatsByPort);
+          return;
         }
-        packetStatsByPort.set(data.portId, statsToStore);
+        packetStatsByPort.set(data.portId, data);
         packetStatsByPort = new Map(packetStatsByPort);
       }
     };

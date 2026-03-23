@@ -4,6 +4,7 @@
   import { fade } from 'svelte/transition';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
+  import Toggle from './Toggle.svelte';
   import VirtualList from '@humanspeak/svelte-virtual-list';
   import { formatTime } from '../utils/time';
   import { copyToClipboard } from '../utils/clipboard';
@@ -501,7 +502,7 @@
         {/if}
       {/each}
     </span>
-    {#if !isFiltering}
+    {#if !isFiltering && !validOnly}
       <span class="interval"
         >{packet.interval !== null
           ? `${packet.interval >= 0 ? '+' : ''}${packet.interval}ms`
@@ -544,10 +545,19 @@
           </div>
         {/if}
       </div>
+        
     </div>
     <p class="description">
       {$t('analysis.raw_log.desc')}
     </p>
+    <Toggle
+      checked={validOnly}
+      onchange={(v) => (validOnly = v)}
+      label={$t('analysis.raw_log.valid_only_label')}
+    />
+    {#if validOnly}
+      <p class="filter-hint">{$t('analysis.raw_log.valid_only_hint')}</p>
+    {/if}
     <div class="filter-row">
       <label class="filter-label">
         <span>{$t('analysis.raw_log.filter_label')}</span>
@@ -557,15 +567,6 @@
           bind:value={filterText}
         />
       </label>
-      <button
-        type="button"
-        class="filter-chip"
-        class:active={validOnly}
-        aria-pressed={validOnly}
-        onclick={() => (validOnly = !validOnly)}
-      >
-        {$t('analysis.raw_log.valid_only_label')}
-      </button>
       {#if isFiltering}
         <Button variant="secondary" onclick={() => (filterText = '')}>
           {$t('analysis.raw_log.clear_filter')}
@@ -574,9 +575,6 @@
     </div>
     {#if isFiltering}
       <p class="filter-hint">{$t('analysis.raw_log.filter_hint')}</p>
-    {/if}
-    {#if validOnly}
-      <p class="filter-hint">{$t('analysis.raw_log.valid_only_hint')}</p>
     {/if}
 
     {#if showSaveDialog && recordedFile}
@@ -675,7 +673,7 @@
     </div>
 
     <!-- Inline Packet Interval Analysis -->
-    {#if stats}
+    {#if stats && !validOnly}
       <div class="stats-inline" transition:fade>
         <div class="stats-header">
           <span class="stats-title">{$t('analysis.stats.title')}</span>
