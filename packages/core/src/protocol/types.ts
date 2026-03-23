@@ -25,24 +25,26 @@ export type ChecksumType =
 /**
  * Supported 2-byte checksum algorithms.
  *
- * - `xor_add`: Returns [XOR_SUM, (ADD_SUM + XOR_SUM) & 0xFF].
- * - `crc_ccitt_xmodem`: Alias of `crc16_xmodem` (legacy compatibility).
- * - `crc16_xmodem`: CRC-16/XMODEM (poly 0x1021, init 0x0000, refin/refout false).
- * - `crc16_ccitt_false`: CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF, refin/refout false).
- * - `crc16_modbus`: CRC-16/MODBUS (poly 0x8005, init 0xFFFF, refin/refout true).
- * - `crc16_ibm`: CRC-16/IBM (poly 0x8005, init 0x0000, refin/refout true).
- * - `crc16_kermit`: CRC-16/KERMIT (poly 0x1021, init 0x0000, refin/refout true).
- * - `crc16_x25`: CRC-16/X25 (poly 0x1021, init 0xFFFF, refin/refout true, xorOut 0xFFFF).
+ * - `xor_add`: 헤더 + 데이터 대상.
+ * - 기본 CRC16 이름(`crc16_*`): 헤더 + 데이터 대상.
+ * - `_no_header` 접미사 CRC16(`crc16_*_no_header`): 데이터만 대상.
+ * - `crc_ccitt_xmodem`: 레거시 alias (`crc16_xmodem_no_header`와 동일 동작).
  */
 export type Checksum2Type =
   | 'xor_add'
   | 'crc_ccitt_xmodem'
   | 'crc16_xmodem'
+  | 'crc16_xmodem_no_header'
   | 'crc16_ccitt_false'
+  | 'crc16_ccitt_false_no_header'
   | 'crc16_modbus'
+  | 'crc16_modbus_no_header'
   | 'crc16_ibm'
+  | 'crc16_ibm_no_header'
   | 'crc16_kermit'
-  | 'crc16_x25';
+  | 'crc16_kermit_no_header'
+  | 'crc16_x25'
+  | 'crc16_x25_no_header';
 
 /**
  * Value encoding/decoding strategies for numeric states.

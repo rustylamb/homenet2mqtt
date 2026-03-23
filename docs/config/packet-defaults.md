@@ -58,16 +58,18 @@
 
 ### 2바이트 체크섬 (`rx_checksum2` / `tx_checksum2`)
 
+> 규칙: `crc16_*`는 **헤더+데이터 포함**, `crc16_*_no_header`는 **헤더 제외(데이터만)** 입니다.
+
 | 알고리즘 (값) | 범위 | 계산 로직 (Pseudo-code) |
 | :--- | :--- | :--- |
 | `xor_add` | 헤더 + 데이터 | 1. `xor_sum = XOR(All Bytes)`<br>2. `add_sum = Sum(All Bytes)`<br>3. `final_add = (add_sum + xor_sum) & 0xFF`<br>결과: `[xor_sum, final_add]` (2바이트 배열) |
-| `crc_ccitt_xmodem` | 데이터 (헤더 제외) | `crc16_xmodem`의 레거시 별칭(alias). 결과는 `[high, low]` |
-| `crc16_xmodem` | 데이터 (헤더 제외) | CRC-16/XMODEM (`poly=0x1021`, `init=0x0000`, `refin=false`, `refout=false`, `xorOut=0x0000`) |
-| `crc16_ccitt_false` | 데이터 (헤더 제외) | CRC-16/CCITT-FALSE (`poly=0x1021`, `init=0xFFFF`, `refin=false`, `refout=false`, `xorOut=0x0000`) |
-| `crc16_modbus` | 데이터 (헤더 제외) | CRC-16/MODBUS (`poly=0x8005`, `init=0xFFFF`, `refin=true`, `refout=true`, `xorOut=0x0000`) |
-| `crc16_ibm` | 데이터 (헤더 제외) | CRC-16/IBM (`poly=0x8005`, `init=0x0000`, `refin=true`, `refout=true`, `xorOut=0x0000`) |
-| `crc16_kermit` | 데이터 (헤더 제외) | CRC-16/KERMIT (`poly=0x1021`, `init=0x0000`, `refin=true`, `refout=true`, `xorOut=0x0000`) |
-| `crc16_x25` | 데이터 (헤더 제외) | CRC-16/X25 (`poly=0x1021`, `init=0xFFFF`, `refin=true`, `refout=true`, `xorOut=0xFFFF`) |
+| `crc_ccitt_xmodem` | 데이터 (헤더 제외) | 레거시 별칭(alias). `crc16_xmodem_no_header`와 동일 |
+| `crc16_xmodem` / `crc16_xmodem_no_header` | 헤더+데이터 / 데이터 | CRC-16/XMODEM (`poly=0x1021`, `init=0x0000`, `refin=false`, `refout=false`, `xorOut=0x0000`) |
+| `crc16_ccitt_false` / `crc16_ccitt_false_no_header` | 헤더+데이터 / 데이터 | CRC-16/CCITT-FALSE (`poly=0x1021`, `init=0xFFFF`, `refin=false`, `refout=false`, `xorOut=0x0000`) |
+| `crc16_modbus` / `crc16_modbus_no_header` | 헤더+데이터 / 데이터 | CRC-16/MODBUS (`poly=0x8005`, `init=0xFFFF`, `refin=true`, `refout=true`, `xorOut=0x0000`) |
+| `crc16_ibm` / `crc16_ibm_no_header` | 헤더+데이터 / 데이터 | CRC-16/IBM (`poly=0x8005`, `init=0x0000`, `refin=true`, `refout=true`, `xorOut=0x0000`) |
+| `crc16_kermit` / `crc16_kermit_no_header` | 헤더+데이터 / 데이터 | CRC-16/KERMIT (`poly=0x1021`, `init=0x0000`, `refin=true`, `refout=true`, `xorOut=0x0000`) |
+| `crc16_x25` / `crc16_x25_no_header` | 헤더+데이터 / 데이터 | CRC-16/X25 (`poly=0x1021`, `init=0xFFFF`, `refin=true`, `refout=true`, `xorOut=0xFFFF`) |
 
 > **참고**: 체크섬 필드에 알고리즘 이름 대신 CEL 표현식을 작성하면 커스텀 로직을 적용할 수 있습니다.
 > 예: `rx_checksum: "data[0] + data[1]"`
