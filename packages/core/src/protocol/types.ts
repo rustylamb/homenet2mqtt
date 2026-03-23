@@ -26,8 +26,23 @@ export type ChecksumType =
  * Supported 2-byte checksum algorithms.
  *
  * - `xor_add`: Returns [XOR_SUM, (ADD_SUM + XOR_SUM) & 0xFF].
+ * - `crc_ccitt_xmodem`: Alias of `crc16_xmodem` (legacy compatibility).
+ * - `crc16_xmodem`: CRC-16/XMODEM (poly 0x1021, init 0x0000, refin/refout false).
+ * - `crc16_ccitt_false`: CRC-16/CCITT-FALSE (poly 0x1021, init 0xFFFF, refin/refout false).
+ * - `crc16_modbus`: CRC-16/MODBUS (poly 0x8005, init 0xFFFF, refin/refout true).
+ * - `crc16_ibm`: CRC-16/IBM (poly 0x8005, init 0x0000, refin/refout true).
+ * - `crc16_kermit`: CRC-16/KERMIT (poly 0x1021, init 0x0000, refin/refout true).
+ * - `crc16_x25`: CRC-16/X25 (poly 0x1021, init 0xFFFF, refin/refout true, xorOut 0xFFFF).
  */
-export type Checksum2Type = 'xor_add';
+export type Checksum2Type =
+  | 'xor_add'
+  | 'crc_ccitt_xmodem'
+  | 'crc16_xmodem'
+  | 'crc16_ccitt_false'
+  | 'crc16_modbus'
+  | 'crc16_ibm'
+  | 'crc16_kermit'
+  | 'crc16_x25';
 
 /**
  * Value encoding/decoding strategies for numeric states.

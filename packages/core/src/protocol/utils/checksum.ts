@@ -1,15 +1,65 @@
-export type ChecksumType =
-  | 'add'
-  | 'add_no_header'
-  | 'xor'
-  | 'xor_no_header'
-  | 'samsung_rx'
-  | 'samsung_tx'
-  | 'samsung_xor'
-  | 'bestin_sum'
-  | 'none';
+import type { ChecksumType, Checksum2Type } from '../types.js';
 
-export type Checksum2Type = 'xor_add' | 'crc_ccitt_xmodem';
+export type { ChecksumType, Checksum2Type };
+
+export const STANDARD_CHECKSUM_TYPES = [
+  'add',
+  'add_no_header',
+  'xor',
+  'xor_no_header',
+  'samsung_rx',
+  'samsung_tx',
+  'samsung_xor',
+  'bestin_sum',
+  'none',
+] as const satisfies readonly ChecksumType[];
+
+export const STANDARD_CHECKSUM2_TYPES = [
+  'xor_add',
+  'crc_ccitt_xmodem',
+  'crc16_xmodem',
+  'crc16_ccitt_false',
+  'crc16_modbus',
+  'crc16_ibm',
+  'crc16_kermit',
+  'crc16_x25',
+] as const satisfies readonly Checksum2Type[];
+
+type Crc16Variant =
+  | 'crc16_xmodem'
+  | 'crc16_ccitt_false'
+  | 'crc16_modbus'
+  | 'crc16_ibm'
+  | 'crc16_kermit'
+  | 'crc16_x25';
+
+interface Crc16Spec {
+  poly: number;
+  init: number;
+  refin: boolean;
+  refout: boolean;
+  xorOut: number;
+}
+
+const CRC16_SPECS: Record<Crc16Variant, Crc16Spec> = {
+  crc16_xmodem: { poly: 0x1021, init: 0x0000, refin: false, refout: false, xorOut: 0x0000 },
+  crc16_ccitt_false: {
+    poly: 0x1021,
+    init: 0xffff,
+    refin: false,
+    refout: false,
+    xorOut: 0x0000,
+  },
+  crc16_modbus: { poly: 0x8005, init: 0xffff, refin: true, refout: true, xorOut: 0x0000 },
+  crc16_ibm: { poly: 0x8005, init: 0x0000, refin: true, refout: true, xorOut: 0x0000 },
+  crc16_kermit: { poly: 0x1021, init: 0x0000, refin: true, refout: true, xorOut: 0x0000 },
+  crc16_x25: { poly: 0x1021, init: 0xffff, refin: true, refout: true, xorOut: 0xffff },
+};
+
+function normalizeChecksum2Type(type: Checksum2Type): Checksum2Type {
+  if (type === 'crc_ccitt_xmodem') return 'crc16_xmodem';
+  return type;
+}
 
 export type ByteArray = number[] | Buffer | Uint8Array;
 
@@ -238,13 +288,19 @@ export function calculateChecksum2(
   data: ByteArray,
   type: Checksum2Type,
 ): number[] {
-  switch (type) {
+  const normalizedType = normalizeChecksum2Type(type);
+  switch (normalizedType) {
     case 'xor_add':
       return xorAdd(header, data);
-    case 'crc_ccitt_xmodem':
-      return crcCcittXmodem(header, data);
+    case 'crc16_xmodem':
+    case 'crc16_ccitt_false':
+    case 'crc16_modbus':
+    case 'crc16_ibm':
+    case 'crc16_kermit':
+    case 'crc16_x25':
+      return crc16FromBytes(data, CRC16_SPECS[normalizedType]);
     default:
-      throw new Error(`Unknown 2-byte checksum type: ${type}`);
+      throw new Error(`Unknown 2-byte checksum type: ${normalizedType}`);
   }
 }
 
@@ -261,14 +317,20 @@ export function calculateChecksum2FromBuffer(
   const dataStart = baseOffset;
   const headerStart = baseOffset + _headerLength;
   const dataStop = baseOffset + dataEnd;
-  switch (type) {
+  const normalizedType = normalizeChecksum2Type(type);
+  switch (normalizedType) {
     case 'xor_add':
       // xorAdd processes header then data linearly, so we can process range 0..dataEnd
       return xorAddRange(buffer, dataStart, dataStop);
-    case 'crc_ccitt_xmodem':
-      return crcCcittXmodemRange(buffer, headerStart, dataStop);
+    case 'crc16_xmodem':
+    case 'crc16_ccitt_false':
+    case 'crc16_modbus':
+    case 'crc16_ibm':
+    case 'crc16_kermit':
+    case 'crc16_x25':
+      return crc16Range(buffer, headerStart, dataStop, CRC16_SPECS[normalizedType]);
     default:
-      throw new Error(`Unknown 2-byte checksum type: ${type}`);
+      throw new Error(`Unknown 2-byte checksum type: ${normalizedType}`);
   }
 }
 
@@ -287,15 +349,28 @@ export function verifyChecksum2FromBuffer(
   const dataStart = baseOffset;
   const headerStart = baseOffset + _headerLength;
   const dataStop = baseOffset + dataEnd;
-  switch (type) {
+  const normalizedType = normalizeChecksum2Type(type);
+  switch (normalizedType) {
     case 'xor_add':
       return verifyXorAddRange(buffer, dataStart, dataStop, expectedHigh, expectedLow);
-    case 'crc_ccitt_xmodem':
-      return verifyCrcCcittXmodemRange(buffer, headerStart, dataStop, expectedHigh, expectedLow);
+    case 'crc16_xmodem':
+    case 'crc16_ccitt_false':
+    case 'crc16_modbus':
+    case 'crc16_ibm':
+    case 'crc16_kermit':
+    case 'crc16_x25':
+      return verifyCrc16Range(
+        buffer,
+        headerStart,
+        dataStop,
+        expectedHigh,
+        expectedLow,
+        CRC16_SPECS[normalizedType],
+      );
     default: {
       const calculated = calculateChecksum2FromBuffer(
         buffer,
-        type,
+        normalizedType,
         _headerLength,
         dataEnd,
         baseOffset,
@@ -395,11 +470,25 @@ export function getChecksumFunction(
  * Used to bypass switch statements in hot loops.
  */
 export function getChecksum2Verifier(type: Checksum2Type): Checksum2Verifier | null {
-  switch (type) {
+  const normalizedType = normalizeChecksum2Type(type);
+  switch (normalizedType) {
     case 'xor_add':
       return verifyXorAddRange;
-    case 'crc_ccitt_xmodem':
-      return verifyCrcCcittXmodemRange;
+    case 'crc16_xmodem':
+    case 'crc16_ccitt_false':
+    case 'crc16_modbus':
+    case 'crc16_ibm':
+    case 'crc16_kermit':
+    case 'crc16_x25':
+      return (buffer, start, end, expectedHigh, expectedLow) =>
+        verifyCrc16Range(
+          buffer,
+          start,
+          end,
+          expectedHigh,
+          expectedLow,
+          CRC16_SPECS[normalizedType],
+        );
     default:
       return null;
   }
@@ -441,54 +530,66 @@ function xorAddRange(buffer: ByteArray, start: number, end: number): number[] {
   return [high, low];
 }
 
-/**
- * CRC-CCITT (XModem) implementation
- * Polynomial: 0x1021
- * Initial Value: 0x0000
- */
-function crcCcittXmodem(header: ByteArray, data: ByteArray): number[] {
-  let crc = 0x0000;
-
-  // For this specific checksum type (based on user request), we only calculate CRC on data
-  // The user provided: data = packet[2:17] (bytes 3 to 17), ignoring header
-  // So we ignore the header here.
-
-  for (const byte of data) {
-    crc = updateCrcCcitt(crc, byte);
-  }
-
-  const high = (crc >> 8) & 0xff;
-  const low = crc & 0xff;
-
-  return [high, low];
-}
-
-function crcCcittXmodemRange(buffer: ByteArray, start: number, end: number): number[] {
-  let crc = 0x0000;
-
-  for (let i = start; i < end; i++) {
-    crc = updateCrcCcitt(crc, buffer[i]);
-  }
-
-  const high = (crc >> 8) & 0xff;
-  const low = crc & 0xff;
-
-  return [high, low];
-}
-
-function verifyCrcCcittXmodemRange(
+function verifyCrc16Range(
   buffer: ByteArray,
   start: number,
   end: number,
   expectedHigh: number,
   expectedLow: number,
+  spec: Crc16Spec,
 ): boolean {
-  const [high, low] = crcCcittXmodemRange(buffer, start, end);
+  const [high, low] = crc16Range(buffer, start, end, spec);
   return high === expectedHigh && low === expectedLow;
 }
 
-function updateCrcCcitt(crc: number, byte: number): number {
-  let x = (crc >> 8) ^ byte;
-  x ^= x >> 4;
-  return ((crc << 8) ^ (x << 12) ^ (x << 5) ^ x) & 0xffff;
+function crc16FromBytes(data: ByteArray, spec: Crc16Spec): number[] {
+  let crc = spec.init & 0xffff;
+  for (const byte of data) {
+    crc = updateCrc16(crc, byte, spec);
+  }
+  return finalizeCrc16(crc, spec);
+}
+
+function crc16Range(buffer: ByteArray, start: number, end: number, spec: Crc16Spec): number[] {
+  let crc = spec.init & 0xffff;
+  for (let i = start; i < end; i++) {
+    crc = updateCrc16(crc, buffer[i], spec);
+  }
+  return finalizeCrc16(crc, spec);
+}
+
+function updateCrc16(crc: number, byte: number, spec: Crc16Spec): number {
+  if (spec.refin) {
+    let cur = (crc ^ byte) & 0xffff;
+    const poly = reflect16(spec.poly);
+    for (let i = 0; i < 8; i++) {
+      cur = cur & 1 ? ((cur >>> 1) ^ poly) & 0xffff : (cur >>> 1) & 0xffff;
+    }
+    return cur;
+  }
+
+  let cur = (crc ^ ((byte & 0xff) << 8)) & 0xffff;
+  for (let i = 0; i < 8; i++) {
+    cur = cur & 0x8000 ? ((cur << 1) ^ spec.poly) & 0xffff : (cur << 1) & 0xffff;
+  }
+  return cur;
+}
+
+function finalizeCrc16(crc: number, spec: Crc16Spec): number[] {
+  let final = crc & 0xffff;
+  if (spec.refout !== spec.refin) {
+    final = reflect16(final);
+  }
+  final = (final ^ spec.xorOut) & 0xffff;
+  return [(final >> 8) & 0xff, final & 0xff];
+}
+
+function reflect16(value: number): number {
+  let reflected = 0;
+  for (let i = 0; i < 16; i++) {
+    if (value & (1 << i)) {
+      reflected |= 1 << (15 - i);
+    }
+  }
+  return reflected & 0xffff;
 }
