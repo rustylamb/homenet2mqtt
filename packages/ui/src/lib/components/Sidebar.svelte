@@ -114,12 +114,21 @@
 {#if showSponsorModal}
   <div
     class="sponsor-modal"
-    role="dialog"
-    aria-modal="true"
-    aria-label="후원 QR코드"
+    role="button"
+    tabindex="0"
+    aria-label="모달 닫기"
     onclick={() => (showSponsorModal = false)}
+    onkeydown={(e) => e.key === 'Escape' && (showSponsorModal = false)}
   >
-    <div class="sponsor-modal-inner" onclick={(e) => e.stopPropagation()}>
+    <div
+      class="sponsor-modal-inner"
+      role="dialog"
+      aria-modal="true"
+      aria-label="후원 QR코드"
+      tabindex="-1"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+    >
       <button
         type="button"
         class="sponsor-modal-close"
