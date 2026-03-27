@@ -3,7 +3,7 @@ meta:
   name_en: "Lights"
   description: "현대 이마주 조명 설정입니다. 방 개수와 방별 조명 개수를 설정할 수 있습니다."
   description_en: "Hyundai Imazu lights configuration. You can configure room count and lights per room."
-  version: "2.1.0"
+  version: "2.1.1"
   author: "wooooooooooook"
   tags: ["light", "hyundai", "imazu"]
   min_version: "2.2.0"
@@ -74,6 +74,7 @@ entities:
           count: '{{room.light_count}}'
           as: light_num
           start: 1
+        id: 'room_{{room.room_id}}_light_{{light_num}}_proxy'
         name: 'Room {{room.room_id}} Light {{light_num}} Proxy'
         state_proxy: true
         target_id: 'room_{{room.room_id}}_light_{{light_num}}'
