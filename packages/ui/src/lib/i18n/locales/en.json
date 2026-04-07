@@ -328,6 +328,7 @@
     "close": "Close",
     "pause": "Pause",
     "resume": "Resume",
+    "back": "Back",
     "retry": "Retry",
     "cancel": "Cancel",
     "confirm": "Confirm",
