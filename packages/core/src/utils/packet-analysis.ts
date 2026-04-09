@@ -23,6 +23,7 @@ import { TextDevice } from '../protocol/devices/text.device.js';
 import { BinarySensorDevice } from '../protocol/devices/binary-sensor.device.js';
 import { toEntityId } from './romanize.js';
 import { matchesPacket } from './packet-matching.js';
+import { hasExplicitSchemaIndex } from '../protocol/schema-index.js';
 import { logger } from './logger.js';
 import type { Device } from '../protocol/device.js';
 
@@ -163,7 +164,7 @@ const matchesPacketTrigger = (
   headerLen: number,
 ) => {
   const match = trigger.match as any;
-  const baseOffset = match?.offset === undefined ? headerLen : 0;
+  const baseOffset = hasExplicitSchemaIndex(match) ? 0 : headerLen;
   return matchesPacket(match, packet, { baseOffset });
 };
 

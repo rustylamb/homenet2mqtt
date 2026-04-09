@@ -41,7 +41,27 @@ function normalizeSerialConfig(serial: SerialConfig): SerialConfig {
   return normalized;
 }
 
+function normalizeIndexAlias(value: unknown): void {
+  if (!value || typeof value !== 'object') return;
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => normalizeIndexAlias(item));
+    return;
+  }
+
+  const obj = value as Record<string, unknown>;
+  if (typeof obj.index === 'number' && obj.offset === undefined) {
+    obj.offset = obj.index;
+  } else if (typeof obj.offset === 'number' && obj.index === undefined) {
+    obj.index = obj.offset;
+  }
+
+  Object.values(obj).forEach((child) => normalizeIndexAlias(child));
+}
+
 export function normalizeConfig(config: HomenetBridgeConfig) {
+  normalizeIndexAlias(config);
+
   const automationAlias = (config as any).automations;
   if (Array.isArray(automationAlias)) {
     if (Array.isArray(config.automation)) {

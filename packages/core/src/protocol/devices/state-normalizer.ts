@@ -1,5 +1,6 @@
 import { matchesPacket } from '../../utils/packet-matching.js';
 import { StateSchema, StateNumSchema } from '../types.js';
+import { getSchemaIndex, hasExplicitSchemaIndex } from '../schema-index.js';
 
 export interface NormalizeStateOptions {
   headerLen?: number;
@@ -13,7 +14,7 @@ const matchesState = (
 ): boolean => {
   if (!schema) return false;
   const headerLen = options.headerLen ?? 0;
-  const baseOffset = schema.offset === undefined ? headerLen : 0;
+  const baseOffset = hasExplicitSchemaIndex(schema) ? 0 : headerLen;
   return matchesPacket(schema, payload, {
     baseOffset,
     allowEmptyData: true,
@@ -39,18 +40,12 @@ const extractValue = (
   schema: StateNumSchema,
   headerLen: number = 0,
 ): number | string | null => {
-  const {
-    offset: rawOffset,
-    length = 1,
-    precision = 0,
-    signed = false,
-    endian = 'big',
-    decode = 'none',
-  } = schema;
+  const { length = 1, precision = 0, signed = false, endian = 'big', decode = 'none' } = schema;
+  const rawIndex = getSchemaIndex(schema);
 
   // offset이 명시되지 않은 경우 headerLen을 기본값으로 사용 (헤더 다음부터)
   // offset이 명시된 경우 전체 패킷 기준으로 사용
-  const offset = rawOffset ?? headerLen;
+  const offset = rawIndex ?? headerLen;
 
   if (offset + length > bytes.length) {
     return null;
@@ -121,7 +116,7 @@ const extractValue = (
 const extractOption = (payload: Uint8Array, schema: any): string | null => {
   if (!schema || !schema.map) return null;
 
-  const offset = schema.offset || 0;
+  const offset = getSchemaIndex(schema) ?? 0;
   const length = schema.length || 1;
 
   if (payload.length < offset + length) return null;
@@ -283,7 +278,7 @@ export const normalizeDeviceState = (
       options,
     );
     if (directionFlag && entityConfig.state_direction) {
-      const offset = entityConfig.state_direction.offset || 0;
+      const offset = getSchemaIndex(entityConfig.state_direction) ?? 0;
       if (payload[offset] === 0) {
         normalized.direction = 'forward';
       } else {

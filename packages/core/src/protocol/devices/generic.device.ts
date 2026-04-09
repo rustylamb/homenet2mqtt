@@ -13,6 +13,7 @@ import {
 } from '../utils/checksum.js';
 import { logger } from '../../utils/logger.js';
 import { Buffer } from 'buffer';
+import { getSchemaIndex, hasExplicitSchemaIndex } from '../schema-index.js';
 
 interface StateScript {
   key: string;
@@ -375,7 +376,7 @@ export class GenericDevice extends Device {
     if (!stateSchema) return false;
     // offset이 명시되지 않은 경우에만 headerLen을 baseOffset으로 사용
     const headerLen = this.protocolConfig.packet_defaults?.rx_header?.length ?? 0;
-    const baseOffset = stateSchema.offset === undefined ? headerLen : 0;
+    const baseOffset = hasExplicitSchemaIndex(stateSchema) ? 0 : headerLen;
     return matchesPacket(stateSchema, packetData, {
       baseOffset,
       allowEmptyData: true,
@@ -397,14 +398,8 @@ export class GenericDevice extends Device {
    * @returns The extracted number or string, or `null` if extraction fails (e.g. out of bounds).
    */
   protected extractValue(bytes: Uint8Array, schema: StateNumSchema): number | string | null {
-    const {
-      offset,
-      length = 1,
-      precision = 0,
-      signed = false,
-      endian = 'big',
-      decode = 'none',
-    } = schema;
+    const { length = 1, precision = 0, signed = false, endian = 'big', decode = 'none' } = schema;
+    const offset = getSchemaIndex(schema);
 
     if (offset === undefined || offset + length > bytes.length) {
       return null;

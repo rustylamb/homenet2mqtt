@@ -11,6 +11,7 @@ import { extractFromSchema } from './schema-utils.js';
 import type { EntityErrorEvent, EntityErrorType } from '../service/event-bus.js';
 import { CelExecutor, CompiledScript, ReusableBufferView } from './cel-executor.js';
 import { logger } from '../utils/logger.js';
+import { hasExplicitSchemaIndex } from './schema-index.js';
 
 export abstract class Device {
   public config: DeviceConfig;
@@ -115,7 +116,7 @@ export abstract class Device {
     // offset이 명시되지 않은 경우에만 headerLength를 baseOffset으로 사용
     // offset이 명시된 경우(0 포함)는 헤더 포함 전체 패킷 기준
     const headerLength = this.protocolConfig.packet_defaults?.rx_header?.length || 0;
-    const baseOffset = stateConfig.offset === undefined ? headerLength : 0;
+    const baseOffset = hasExplicitSchemaIndex(stateConfig) ? 0 : headerLength;
 
     // Optimization: Update reusable view/context for zero-allocation guard execution
     if (this.reusableBufferView) {

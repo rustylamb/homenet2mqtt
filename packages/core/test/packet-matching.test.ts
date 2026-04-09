@@ -38,4 +38,14 @@ describe('matchesPacket', () => {
     };
     expect(matchesPacket(schema, Buffer.from([0x01, 0x02]))).toBe(false);
   });
+
+  it('should support index field as primary position key', () => {
+    const schema: StateSchema = {
+      index: 1,
+      data: [0xaa, 0xbb],
+    };
+
+    expect(matchesPacket(schema, Buffer.from([0x00, 0xaa, 0xbb]))).toBe(true);
+    expect(matchesPacket(schema, Buffer.from([0xaa, 0xbb, 0x00]))).toBe(false);
+  });
 });

@@ -1,8 +1,10 @@
 import { Buffer } from 'buffer';
 import { StateSchema, StateNumSchema } from './types.js';
+import { getSchemaIndex } from './schema-index.js';
 
 export const extractFromSchema = (packet: Buffer, schema: StateSchema | StateNumSchema): any => {
-  const { offset = 0, data, mask, inverted = false } = schema;
+  const offset = getSchemaIndex(schema) ?? 0;
+  const { data, mask, inverted = false } = schema;
   const numSchema = schema as StateNumSchema;
 
   // Determine length

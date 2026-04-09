@@ -188,7 +188,13 @@ export interface StateSchema {
   mask?: number | number[];
 
   /**
-   * Byte offset in the packet payload where the state value is located.
+   * Byte index in the full packet where the state value is located.
+   */
+  index?: number;
+
+  /**
+   * Legacy alias for `index`.
+   * @deprecated Use `index` instead.
    */
   offset?: number;
 
@@ -272,13 +278,13 @@ export interface CommandResult {
 /**
  * State schema that can be either a structured schema object or a CEL expression string.
  * CEL expressions are evaluated at runtime to extract values from packet data.
- * @example { offset: 5, length: 2 } or 'data[5] * 256 + data[6]'
+ * @example { index: 5, length: 2 } or 'data[5] * 256 + data[6]'
  */
 export type StateSchemaOrCEL = StateSchema | string;
 
 /**
  * Numeric state schema that can be either a structured schema object or a CEL expression string.
  * CEL expressions are evaluated at runtime to extract numeric values from packet data.
- * @example { offset: 5, length: 1, precision: 1 } or 'data[5] / 10.0'
+ * @example { index: 5, length: 1, precision: 1 } or 'data[5] / 10.0'
  */
 export type StateNumSchemaOrCEL = StateNumSchema | string;
