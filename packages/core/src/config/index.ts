@@ -50,10 +50,11 @@ function normalizeIndexAlias(value: unknown): void {
   }
 
   const obj = value as Record<string, unknown>;
-  if (typeof obj.index === 'number' && obj.offset === undefined) {
-    obj.offset = obj.index;
-  } else if (typeof obj.offset === 'number' && obj.index === undefined) {
+  if (typeof obj.offset === 'number' && obj.index === undefined) {
     obj.index = obj.offset;
+  }
+  if (Object.hasOwn(obj, 'offset')) {
+    delete obj.offset;
   }
 
   Object.values(obj).forEach((child) => normalizeIndexAlias(child));

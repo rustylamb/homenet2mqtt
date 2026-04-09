@@ -17,7 +17,8 @@ describe('Config Leniency', () => {
     normalizeConfig(config);
 
     expect(config.sensor[0].state_number).toBeDefined();
-    expect(config.sensor[0].state_number.offset).toBe(1);
+    expect(config.sensor[0].state_number.index).toBe(1);
+    expect(config.sensor[0].state_number.offset).toBeUndefined();
   });
 
   it('should treat state_value as state_text for text_sensor', () => {
@@ -35,7 +36,8 @@ describe('Config Leniency', () => {
     normalizeConfig(config);
 
     expect(config.text_sensor[0].state_text).toBeDefined();
-    expect(config.text_sensor[0].state_text.offset).toBe(2);
+    expect(config.text_sensor[0].state_text.index).toBe(2);
+    expect(config.text_sensor[0].state_text.offset).toBeUndefined();
   });
 
   it('should treat state_value as state_number for sensor', () => {
@@ -53,7 +55,8 @@ describe('Config Leniency', () => {
     normalizeConfig(config);
 
     expect(config.sensor[0].state_number).toBeDefined();
-    expect(config.sensor[0].state_number.offset).toBe(3);
+    expect(config.sensor[0].state_number.index).toBe(3);
+    expect(config.sensor[0].state_number.offset).toBeUndefined();
   });
 
   it('should treat state_number as state_text for text_sensor', () => {
@@ -71,10 +74,11 @@ describe('Config Leniency', () => {
     normalizeConfig(config);
 
     expect(config.text_sensor[0].state_text).toBeDefined();
-    expect(config.text_sensor[0].state_text.offset).toBe(4);
+    expect(config.text_sensor[0].state_text.index).toBe(4);
+    expect(config.text_sensor[0].state_text.offset).toBeUndefined();
   });
 
-  it('should copy index to offset for schema compatibility', () => {
+  it('should keep index and remove offset after normalization', () => {
     const config: any = {
       serial: { portId: 'test', path: '/dev/test', baud_rate: 9600 },
       sensor: [
@@ -89,12 +93,12 @@ describe('Config Leniency', () => {
     normalizeConfig(config);
 
     expect(config.sensor[0].state.index).toBe(0);
-    expect(config.sensor[0].state.offset).toBe(0);
+    expect(config.sensor[0].state.offset).toBeUndefined();
     expect(config.sensor[0].state_number.index).toBe(3);
-    expect(config.sensor[0].state_number.offset).toBe(3);
+    expect(config.sensor[0].state_number.offset).toBeUndefined();
   });
 
-  it('should copy offset to index for renamed field', () => {
+  it('should rename offset to index and remove offset', () => {
     const config: any = {
       serial: { portId: 'test', path: '/dev/test', baud_rate: 9600 },
       sensor: [
@@ -107,7 +111,7 @@ describe('Config Leniency', () => {
 
     normalizeConfig(config);
 
-    expect(config.sensor[0].state.offset).toBe(1);
     expect(config.sensor[0].state.index).toBe(1);
+    expect(config.sensor[0].state.offset).toBeUndefined();
   });
 });
