@@ -1,6 +1,7 @@
 import { GenericDevice } from './generic.device.js';
 import { ProtocolConfig, CommandResult } from '../types.js';
 import { TextSensorEntity } from '../../domain/entities/text-sensor.entity.js';
+import { getSchemaIndex } from '../schema-index.js';
 
 export class TextSensorDevice extends GenericDevice {
   constructor(config: TextSensorEntity, protocolConfig: ProtocolConfig) {
@@ -31,7 +32,7 @@ export class TextSensorDevice extends GenericDevice {
   private extractText(packet: Buffer, schema: any): string | null {
     if (!schema) return null;
 
-    const offset = schema.offset || 0;
+    const offset = getSchemaIndex(schema) ?? 0;
     const length = schema.length || 1;
 
     if (packet.length < offset + length) return null;

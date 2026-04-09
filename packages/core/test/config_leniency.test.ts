@@ -73,4 +73,41 @@ describe('Config Leniency', () => {
     expect(config.text_sensor[0].state_text).toBeDefined();
     expect(config.text_sensor[0].state_text.offset).toBe(4);
   });
+
+  it('should copy index to offset for schema compatibility', () => {
+    const config: any = {
+      serial: { portId: 'test', path: '/dev/test', baud_rate: 9600 },
+      sensor: [
+        {
+          id: 'test_sensor_index',
+          state: { data: [0x05], index: 0 },
+          state_number: { index: 3, length: 1 },
+        },
+      ],
+    };
+
+    normalizeConfig(config);
+
+    expect(config.sensor[0].state.index).toBe(0);
+    expect(config.sensor[0].state.offset).toBe(0);
+    expect(config.sensor[0].state_number.index).toBe(3);
+    expect(config.sensor[0].state_number.offset).toBe(3);
+  });
+
+  it('should copy offset to index for renamed field', () => {
+    const config: any = {
+      serial: { portId: 'test', path: '/dev/test', baud_rate: 9600 },
+      sensor: [
+        {
+          id: 'test_sensor_offset_alias',
+          state: { data: [0x06], offset: 1 },
+        },
+      ],
+    };
+
+    normalizeConfig(config);
+
+    expect(config.sensor[0].state.offset).toBe(1);
+    expect(config.sensor[0].state.index).toBe(1);
+  });
 });

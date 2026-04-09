@@ -6,6 +6,7 @@ import { logger } from '../utils/logger.js';
 import { PacketProcessor } from '../protocol/packet-processor.js';
 import { StateSchema } from '../protocol/types.js';
 import { matchesPacket } from '../utils/packet-matching.js';
+import { hasExplicitSchemaIndex } from '../protocol/schema-index.js';
 import { eventBus } from './event-bus.js';
 
 interface RetryConfig {
@@ -257,7 +258,7 @@ export class CommandManager {
       // offset이 명시되지 않은 경우에만 headerLen을 baseOffset으로 사용
       // offset이 명시된 경우(0 포함)는 헤더 포함 전체 패킷 기준
       const headerLen = this.config.packet_defaults?.rx_header?.length ?? 0;
-      const baseOffset = job.ackMatch.offset === undefined ? headerLen : 0;
+      const baseOffset = hasExplicitSchemaIndex(job.ackMatch) ? 0 : headerLen;
       const matcher = (packet: Buffer) => {
         if (job.ackMatch && matchesPacket(job.ackMatch, packet, { baseOffset })) {
           callback();

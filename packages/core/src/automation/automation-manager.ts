@@ -38,6 +38,7 @@ import { findEntityById } from '../utils/entities.js';
 import { logger } from '../utils/logger.js';
 import { matchesPacket } from '../utils/packet-matching.js';
 import { normalizeDeviceState } from '../protocol/devices/state-normalizer.js';
+import { hasExplicitSchemaIndex } from '../protocol/schema-index.js';
 import {
   calculateChecksumFromBuffer,
   calculateChecksum2FromBuffer,
@@ -74,6 +75,7 @@ type CommandSender = (
 const SCHEMA_KEYS = [
   'data',
   'mask',
+  'index',
   'offset',
   'inverted',
   'guard',
@@ -482,7 +484,7 @@ export class AutomationManager {
     const match = trigger.match as StateSchema;
     // offset이 명시되지 않은 경우에만 headerLen을 baseOffset으로 사용
     const headerLen = this.config.packet_defaults?.rx_header?.length ?? 0;
-    const baseOffset = match?.offset === undefined ? headerLen : 0;
+    const baseOffset = hasExplicitSchemaIndex(match) ? 0 : headerLen;
     return matchesPacket(match, packet, { baseOffset });
   }
 
@@ -832,7 +834,7 @@ export class AutomationManager {
         if (this.isDataMatchSchema(rawValue)) {
           // offset이 명시되지 않은 경우에만 headerLen을 baseOffset으로 사용
           const headerLen = this.config.packet_defaults?.rx_header?.length ?? 0;
-          const baseOffset = rawValue.offset === undefined ? headerLen : 0;
+          const baseOffset = hasExplicitSchemaIndex(rawValue) ? 0 : headerLen;
           const matched = matchesPacket(rawValue, packetBuffer, {
             baseOffset,
             allowEmptyData: true,

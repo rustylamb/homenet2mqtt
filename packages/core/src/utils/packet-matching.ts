@@ -1,5 +1,6 @@
 import { CelExecutor, CompiledScript } from '../protocol/cel-executor.js';
 import { StateSchema } from '../protocol/types.js';
+import { getSchemaIndex } from '../protocol/schema-index.js';
 
 interface PacketMatchOptions {
   baseOffset?: number;
@@ -18,7 +19,7 @@ export function matchesPacket(
     return false;
   }
   const baseOffset = options.baseOffset ?? 0;
-  const offset = (match.offset ?? 0) + baseOffset;
+  const offset = (getSchemaIndex(match) ?? 0) + baseOffset;
   const hasData = Array.isArray(match.data) && match.data.length > 0;
   let matched = true;
 

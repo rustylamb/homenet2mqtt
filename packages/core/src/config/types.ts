@@ -61,7 +61,7 @@ export interface AutomationTriggerPacket {
   type: 'packet';
   /**
    * Schema to match the received packet.
-   * `data` field is required. `offset` can be used to skip header.
+   * `data` field is required. `index` can be used to skip header.
    */
   match: StateSchema;
   /** Additional CEL condition. */

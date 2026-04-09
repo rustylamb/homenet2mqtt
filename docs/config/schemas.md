@@ -23,7 +23,8 @@
 | 속성 | 타입 | 기본값 | 설명 |
 | --- | --- | --- | --- |
 | `data` | `number[]` | - | 패킷이 이 배열과 일치해야 합니다. |
-| `offset` | `number` | `rx_header`의 길이 | `data` 비교를 시작할 위치입니다. **생략 시 헤더 다음 바이트부터 매칭하고, 명시(0 포함) 시 헤더 포함 전체 패킷 기준 인덱스**입니다. |
+| `index` | `number` | `rx_header`의 길이 | `data` 비교를 시작할 위치입니다. **생략 시 헤더 다음 바이트부터 매칭하고, 명시(0 포함) 시 헤더 포함 전체 패킷 기준 인덱스**입니다. |
+| `offset` | `number` | - | `index`의 레거시 alias 입니다. 기존 설정 호환용으로만 유지됩니다. |
 | `mask` | `number` \| `number[]` | - | 비교 전 `(value & mask)`를 적용합니다. 특정 비트만 비교할 때 유용합니다. |
 | `inverted` | `boolean` | `false` | `true`면 매칭/추출 전에 비트를 반전(`~value`)합니다. |
 | `guard` | `string` | - | `data` 매칭 후 추가로 검증할 CEL 표현식입니다. |
@@ -32,7 +33,7 @@
 ### 실전 작성 가이드
 
 **Q: 헤더 다음 바이트가 `0x82 0x80 0x01`로 시작하는 패킷을 매칭하려면?**
-`offset`을 생략하면 헤더 다음 바이트부터 매칭합니다.
+`index`를 생략하면 헤더 다음 바이트부터 매칭합니다.
 ```yaml
 # rx_header: [0xF7]인 경우 → F7 82 80 01 ... 매칭
 state:
@@ -40,11 +41,11 @@ state:
 ```
 
 **Q: 헤더를 포함한 전체 패킷의 3번째 바이트(인덱스 2)가 `0x01`인 패킷은?**
-`offset`을 명시하면 헤더 포함 전체 패킷 기준으로 인덱스를 지정합니다.
+`index`를 명시하면 헤더 포함 전체 패킷 기준으로 인덱스를 지정합니다.
 ```yaml
 # rx_header: [0xF7]인 경우 → F7 xx 01 ... 매칭 (packet[2] = 0x01)
 state:
-  offset: 2
+  index: 2
   data: [0x01]
 ```
 
@@ -62,7 +63,7 @@ state:
 state:
   data: [0x82]
   except:
-    - offset: 1
+    - index: 1
       data: [0xEE]  # 0x82 0xEE ... 는 제외
 ```
 
@@ -90,7 +91,7 @@ state:
 
 # 매칭된 패킷의 2번 인덱스(3번째 바이트)를 온도로 사용
 state_temperature:
-  offset: 2
+  index: 2
   length: 1
 ```
 
@@ -98,7 +99,7 @@ state_temperature:
 오프셋 4부터 2바이트를 읽어 `23.5`(`235`)로 변환합니다.
 ```yaml
 state_temperature:
-  offset: 4
+  index: 4
   length: 2
   endian: big
   precision: 1
@@ -108,7 +109,7 @@ state_temperature:
 `0x12 0x34` → `1234`로 변환.
 ```yaml
 state_value:
-  offset: 5
+  index: 5
   length: 2
   decode: bcd
 ```
@@ -119,7 +120,7 @@ state_value:
 | 속성 | 타입 | 기본값 | 설명 |
 | --- | --- | --- | --- |
 | `data` | `number[]` | - | 전송할 기본 패킷 데이터. |
-| `ack` | `StateSchema` \| `number[]` | - | ACK 패킷 매칭 패턴. 정의된 경우 이 패턴에 매칭되는 패킷 **또는** `state:change` 이벤트가 발생하면 명령이 성공한 것으로 간주합니다. 배열로 지정하면 `{ data: [...] }` 형태의 `StateSchema`로 자동 변환됩니다. **`offset`을 생략하면 헤더 다음 바이트부터 매칭하고, `offset`을 명시(0 포함)하면 헤더 포함 전체 패킷 기준으로 매칭**합니다. |
+| `ack` | `StateSchema` \| `number[]` | - | ACK 패킷 매칭 패턴. 정의된 경우 이 패턴에 매칭되는 패킷 **또는** `state:change` 이벤트가 발생하면 명령이 성공한 것으로 간주합니다. 배열로 지정하면 `{ data: [...] }` 형태의 `StateSchema`로 자동 변환됩니다. **`index`를 생략하면 헤더 다음 바이트부터 매칭하고, `index`를 명시(0 포함)하면 헤더 포함 전체 패킷 기준으로 매칭**합니다. |
 
 | `value_offset` | `number` | - | 입력값을 삽입할 인덱스. |
 | `length` | `number` | `1` | 입력값이 차지할 바이트 길이. |
@@ -136,7 +137,7 @@ state_value:
 - **`ack`가 정의된 경우**: ACK 패킷 매칭 **또는** 해당 엔티티의 `state:change` 이벤트 중 **먼저 발생하는 것**을 ACK로 처리합니다.
 - **`ack`가 정의되지 않은 경우**: 기존처럼 `state:change` 이벤트만을 ACK로 대기합니다.
 - Button과 같이 `state:change` 이벤트가 발생하지 않는 엔티티에서는 `ack`를 반드시 정의해야 ACK를 수신할 수 있습니다.
-- `ack`는 위의 [StateSchema](#stateschema-패킷-매칭) 형식으로 정의할 수 있으며, `offset`, `mask`, `except` 등의 고급 매칭 옵션을 사용할 수 있습니다.
+- `ack`는 위의 [StateSchema](#stateschema-패킷-매칭) 형식으로 정의할 수 있으며, `index`(또는 legacy `offset`), `mask`, `except` 등의 고급 매칭 옵션을 사용할 수 있습니다.
 
 ### 스키마 기반 vs CEL 방식
 
@@ -255,7 +256,7 @@ button:
       data: [0x31, 0x01, 0x00]
       ack: [0x31, 0x81, 0x00]  # 0x31 0x81 0x00으로 시작하는 패킷을 ACK로 인식
 
-# StateSchema 형태 (offset, mask 등 고급 옵션 사용 가능)
+# StateSchema 형태 (index, mask 등 고급 옵션 사용 가능)
 button:
   - id: doorbell
     name: "초인종"
@@ -263,7 +264,7 @@ button:
       data: [0x42, 0x01]
       ack:
         data: [0x42]
-        offset: 0
+        index: 0
         mask: 0xFF
 ```
 
@@ -284,7 +285,7 @@ button:
   command_custom_preset: 'xstr == "Away" ? [0x01] : [0x02]'
   ```
 - `automation` 트리거/액션에서 패킷 매칭은 `StateSchema` 규칙을, 명령 실행은 `CommandSchema` 규칙을 그대로 따릅니다. 자세한 예제는 [AUTOMATION.md](../guide/automation.md)를 참고하세요.
-- `automation` 액션에 `update_state`를 사용할 수 있습니다. 패킷 트리거와 조합해 엔티티 상태를 직접 갱신하며, 값은 `StateSchema/StateNumSchema`로 정의합니다. `offset`은 수신된 원본 패킷 전체(rx_header 포함)를 기준으로 계산합니다. 모든 엔티티 타입에서 `parseData`와 동일한 해석을 적용합니다.
+- `automation` 액션에 `update_state`를 사용할 수 있습니다. 패킷 트리거와 조합해 엔티티 상태를 직접 갱신하며, 값은 `StateSchema/StateNumSchema`로 정의합니다. `index`는 수신된 원본 패킷 전체(rx_header 포함)를 기준으로 계산합니다. 모든 엔티티 타입에서 `parseData`와 동일한 해석을 적용합니다. (`offset`도 alias로 동작)
 - 설정 파일에서는 `automation` 대신 `automations`를 최상위 키로 선언해도 동일하게 동작합니다.
 - `update_state`는 대상 엔티티에 정의된 `state_*` 및 해당 속성명만 허용하며, 정의되지 않은 속성은 오류로 처리됩니다.
 
