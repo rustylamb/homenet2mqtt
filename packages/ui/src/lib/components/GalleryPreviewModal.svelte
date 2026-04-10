@@ -8,6 +8,8 @@
   import HintBubble from './HintBubble.svelte';
   import Dialog from './Dialog.svelte';
   import yaml from 'js-yaml';
+  import { marked } from 'marked';
+  import DOMPurify from 'dompurify';
   import { triggerSystemRestart as restartApp } from '../utils/appControl';
   import type {
     GalleryDiscoveryResult,
@@ -140,6 +142,15 @@
       ? snippetDescriptionEn || item.description_en
       : snippetDescription || item.description,
   );
+
+  const htmlDescription = $derived.by(() => {
+    if (!displayDescription) return '';
+    const rawHtml = marked.parse(displayDescription, { async: false }) as string;
+    if (typeof window !== 'undefined') {
+      return DOMPurify.sanitize(rawHtml);
+    }
+    return rawHtml;
+  });
 
   const scriptCount = $derived(item.content_summary.scripts ?? 0);
   const hasParameters = $derived((item.parameters?.length ?? 0) > 0);
@@ -770,8 +781,8 @@
     {:else}
       <div class="modal-body">
         {#if displayDescription}
-          <div class="description-section">
-            <p id="gallery-preview-desc">{displayDescription}</p>
+          <div class="description-section markdown-content">
+            <div id="gallery-preview-desc">{@html htmlDescription}</div>
           </div>
         {/if}
 
@@ -1366,12 +1377,43 @@
     border-radius: 4px;
   }
 
-  .description-section p {
-    margin: 0;
+  .description-section :global(p) {
+    margin: 0.5rem 0;
     font-size: 0.95rem;
     line-height: 1.6;
     color: #e2e8f0;
-    white-space: pre-wrap;
+  }
+
+  .description-section :global(p:first-child) {
+    margin-top: 0;
+  }
+
+  .description-section :global(p:last-child) {
+    margin-bottom: 0;
+  }
+
+  .markdown-content :global(ul),
+  .markdown-content :global(ol) {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+    color: #e2e8f0;
+  }
+
+  .markdown-content :global(li) {
+    margin-bottom: 0.25rem;
+  }
+
+  .markdown-content :global(code) {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-family: 'Fira Code', monospace;
+    color: #60a5fa;
+  }
+
+  .markdown-content :global(a) {
+    color: #3b82f6;
+    text-decoration: underline;
   }
 
   .target-port-wrapper {
@@ -1639,7 +1681,7 @@
       border-radius: 0;
     }
 
-    .description-section p {
+    .description-section :global(p) {
       font-size: 0.85rem;
     }
 

@@ -829,30 +829,6 @@
     box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.35);
   }
 
-  .filter-chip {
-    border: 1px solid rgba(148, 163, 184, 0.35);
-    border-radius: 999px;
-    padding: 0.35rem 0.7rem;
-    background: rgba(15, 23, 42, 0.6);
-    color: #cbd5f5;
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .filter-chip:hover {
-    border-color: rgba(148, 163, 184, 0.6);
-    color: #e2e8f0;
-  }
-
-  .filter-chip.active {
-    border-color: rgba(59, 130, 246, 0.7);
-    background: rgba(59, 130, 246, 0.2);
-    color: #eff6ff;
-    box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
-  }
-
   .filter-hint {
     color: #fbbf24;
     font-size: 0.8rem;
