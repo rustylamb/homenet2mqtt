@@ -35,6 +35,9 @@ jobs:
           # Update config.yaml with timestamp version
           sed -i "s/^version: .*/version: \"$VERSION\"/" hassio-addon-dev/config.yaml
 
+          # Update package.json version for the app to show correct version
+          sed -i "0,/\"version\": \".*\"/s//\"version\": \"$VERSION\"/" package.json
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
