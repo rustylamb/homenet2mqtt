@@ -85,6 +85,7 @@ services:
     container_name: rs485-app-dev
     environment:
       CI: 'true'
+      NODE_ENV: 'development'
       MQTT_URL: mqtt://mq:1883
       SERIAL_PATH_WAIT_TIMEOUT_MS: '10000'
       PORT: '3000'
@@ -95,7 +96,7 @@ services:
     volumes:
       - config_data:/config
       - /dev/pts:/dev/pts
-      - ../../gallery:/gallery
+      - ../../gallery:/app/gallery
     ports:
       - '3000:3000'
     privileged: true
@@ -119,7 +120,7 @@ services:
       - pnpm-store:/root/.local/share/pnpm
       - ui_node_modules:/workspace/node_modules
     ports:
-      - '5174:5173'
+      - '5173:5173'
     command: >
       bash -lc "
         set -euo pipefail

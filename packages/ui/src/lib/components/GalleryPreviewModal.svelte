@@ -1,6 +1,7 @@
 <script lang="ts">
   import { t, locale } from 'svelte-i18n';
   import { onMount } from 'svelte';
+  import Giscus from './Giscus.svelte';
   import Button from './Button.svelte';
   import MonacoDiffEditor from './MonacoDiffEditor.svelte';
   import Modal from './Modal.svelte';
@@ -910,6 +911,22 @@
             {/if}
           {/if}
         </div>
+
+        <div class="giscus-section">
+          <Giscus
+            repo="wooooooooooook/homenet2mqtt"
+            repoId="R_kgDOQQ8nWw"
+            category="Q&A"
+            categoryId="DIC_kwDOQQ8nW84C6gGd"
+            mapping="specific"
+            term={item.file}
+            reactionsEnabled="1"
+            emitMetadata="0"
+            inputPosition="top"
+            theme="dark"
+            lang={$locale?.startsWith('en') ? 'en' : 'ko'}
+          />
+        </div>
       </div>
 
       <footer class="modal-footer">
@@ -1398,8 +1415,17 @@
   }
 
   .info-value {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 600;
     color: #f1f5f9;
+    font-family: 'Fira Code', monospace;
+  }
+
+  .giscus-section {
+    width: 100%;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
   }
 
   .contents-summary h4 {
