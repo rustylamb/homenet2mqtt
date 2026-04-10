@@ -8,6 +8,7 @@
   import HintBubble from './HintBubble.svelte';
   import Dialog from './Dialog.svelte';
   import yaml from 'js-yaml';
+  import ParameterObjectArrayEditor from './ParameterObjectArrayEditor.svelte';
   import { marked } from 'marked';
   import DOMPurify from 'dompurify';
   import { triggerSystemRestart as restartApp } from '../utils/appControl';
@@ -862,6 +863,13 @@
                           parameter.name,
                           (event.target as HTMLInputElement).value,
                         )}
+                    />
+                  {:else if parameter.type === 'object[]' && parameter.schema}
+                    <ParameterObjectArrayEditor
+                      schema={parameter.schema}
+                      value={JSON.parse(parameterInputs[parameter.name] || '[]')}
+                      onUpdate={(newValue) =>
+                        updateParameterInput(parameter.name, JSON.stringify(newValue))}
                     />
                   {:else}
                     {#if parameter.schema && Object.keys(parameter.schema).length > 0}

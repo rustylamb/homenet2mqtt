@@ -495,7 +495,10 @@
         "type_string": "문자열",
         "type_boolean": "불리언",
         "min": "최소",
-        "max": "최대"
+        "max": "최대",
+        "add_item": "항목 추가",
+        "remove_item": "제거",
+        "item_index": "{index}번 항목"
       }
     }
   },

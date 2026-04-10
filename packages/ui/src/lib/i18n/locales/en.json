@@ -495,7 +495,10 @@
         "type_string": "String",
         "type_boolean": "Boolean",
         "min": "Min",
-        "max": "Max"
+        "max": "Max",
+        "add_item": "Add Item",
+        "remove_item": "Remove",
+        "item_index": "Item {index}"
       }
     }
   },
