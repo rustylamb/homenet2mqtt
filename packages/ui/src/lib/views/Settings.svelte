@@ -795,7 +795,14 @@
 
 <section class="settings-view">
   <div class="view-header">
-    <h1>{$t('settings.title')}</h1>
+    <div class="header-main">
+      <h1>{$t('settings.title')}</h1>
+      {#if bridgeInfo?.version}
+        <span class="version-badge" class:is-dev={bridgeInfo.version.startsWith('dev-')}>
+          {bridgeInfo.version.startsWith('dev-') ? 'DEV ' : ''}v{bridgeInfo.version}
+        </span>
+      {/if}
+    </div>
     <div class="lang-switcher">
       <select
         value={$locale}
@@ -2035,6 +2042,28 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     justify-content: flex-end;
+  }
+
+  .header-main {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .version-badge {
+    font-size: 0.75rem;
+    padding: 0.15rem 0.6rem;
+    background: rgba(148, 163, 184, 0.1);
+    color: #94a3b8;
+    border-radius: 99px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    font-weight: 500;
+  }
+
+  .version-badge.is-dev {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
+    color: #a78bfa;
+    border-color: rgba(168, 85, 247, 0.3);
   }
 
   :global(.file-action-btn) {

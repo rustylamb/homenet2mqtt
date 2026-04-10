@@ -146,6 +146,7 @@ export type BridgeInfo = {
   topic: string;
   restartRequired?: boolean;
   timezone?: string;
+  version?: string;
 };
 
 export type CommandInfo = {

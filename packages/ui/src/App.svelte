@@ -1892,6 +1892,7 @@
   <a href="#main-content" class="skip-link">{$t('header.skip_to_content')}</a>
   <main class="app-container">
     <Header
+      {bridgeInfo}
       onToggleSidebar={() => (isSidebarOpen = !isSidebarOpen)}
       portIds={availablePortIds}
       {activePortId}

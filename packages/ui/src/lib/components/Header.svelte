@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
-  import type { BridgeErrorPayload, BridgeStatus } from '../types';
+  import type { BridgeErrorPayload, BridgeStatus, BridgeInfo } from '../types';
   import HintBubble from './HintBubble.svelte';
 
   let {
@@ -12,6 +12,7 @@
     onPortChange,
     onAddBridge,
     hasLoadError = false,
+    bridgeInfo,
   }: {
     onToggleSidebar?: () => void;
     portIds?: string[];
@@ -25,6 +26,7 @@
     onPortChange?: (portId: string) => void;
     onAddBridge?: () => void;
     hasLoadError?: boolean;
+    bridgeInfo?: BridgeInfo | null;
   } = $props();
 
   let isDropdownOpen = $state(false);
@@ -146,15 +148,11 @@
     <div class="logo">
       <img src="./logo.png" alt="" class="logo-icon" aria-hidden="true" />
       <span class="logo-text">Homenet2MQTT</span>
-    </div>
-
-    <div
-      class="beta-badge"
-      role="status"
-      title={$t('header.beta_badge_label')}
-      aria-label={$t('header.beta_badge_label')}
-    >
-      BETA
+      {#if bridgeInfo?.version?.startsWith('dev-')}
+        <span class="dev-badge">DEV</span>
+      {:else if bridgeInfo?.version}
+        <span class="version-label">v{bridgeInfo.version}</span>
+      {/if}
     </div>
   </div>
 
@@ -361,20 +359,41 @@
     transition: all 0.2s;
   }
 
+  .dev-badge {
+    height: 14px;
+    padding: 1px 5px;
+    font-size: 8.5px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    border-radius: 4px;
+    margin-left: 6px;
+    margin-top: 1px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    text-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.2);
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  .version-label {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    margin-left: 0.4rem;
+    margin-top: 0.15rem;
+    font-weight: 500;
+    opacity: 0.7;
+    user-select: none;
+    white-space: nowrap;
+  }
+
   button.ghost:hover:not(:disabled) {
     background: rgba(148, 163, 184, 0.1);
     color: #e2e8f0;
     border-color: rgba(148, 163, 184, 0.4);
-  }
-
-  .beta-badge {
-    background-color: #f59e0b;
-    color: #fff;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: bold;
-    user-select: none;
   }
 
   /* Port Tabs - 인라인 모드 */
@@ -610,7 +629,9 @@
       display: block;
     }
 
-    .logo-text {
+    .logo-text,
+    .version-label,
+    .dev-badge {
       display: none;
     }
   }

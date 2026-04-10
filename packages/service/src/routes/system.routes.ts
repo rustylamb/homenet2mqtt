@@ -14,6 +14,7 @@ import {
   normalizeFrontendSettings,
 } from '../utils/helpers.js';
 import { RateLimiter } from '../utils/rate-limiter.js';
+import { getAppVersion } from '../utils/version-utils.js';
 import type {
   BridgeErrorPayload,
   BridgeInstance,
@@ -138,6 +139,7 @@ export function createSystemRoutes(ctx: SystemRoutesContext): Router {
         errorInfo: bridgeError ?? null,
         topic: `${BASE_MQTT_PREFIX}/homedevice1/raw`,
         timezone: timezoneOverride || undefined,
+        version: await getAppVersion(),
       });
     }
 
@@ -200,6 +202,7 @@ export function createSystemRoutes(ctx: SystemRoutesContext): Router {
       restartRequired,
       timezone: timezoneOverride || undefined,
       mqttConnected: anyMqttConnected,
+      version: await getAppVersion(),
     });
   });
 

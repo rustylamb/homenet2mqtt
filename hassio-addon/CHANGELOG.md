@@ -4,6 +4,7 @@
 
 v2.11.0
 - beta를 종료하고 stable 버전으로 운영합니다
+  - 분명 잘 안쓰이는 기능에는 버그가 많을것으로 예상되지만 1-2달간 특별한 오류 제보가 없어 stable로 전환합니다.
 - 모든 설정의 offset항목을 index로 치환하였습니다. offset으로 설정된 파일도 사용가능합니다.
   - [uartex](https://github.com/eigger/espcomponents/tree/master/components/uartex)의 스키마를 따오는 과정에서 제 지식 부족으로인해 의미상 index인것을 offset으로 사용하고있어서 이번에 바로잡았습니다.
 - 갤러리 기능 개선
