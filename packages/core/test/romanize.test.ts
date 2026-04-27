@@ -48,9 +48,16 @@ describe('Romanize Utility', () => {
 
     it('should handle special characters and multiple spaces', () => {
       expect(toEntityId('Light #1! (Main)')).toBe('light_1_main');
-      // Current implementation preserves dashes and does not collapse or trim them
-      expect(toEntityId('---Multiple---Dashes---')).toBe('---multiple---dashes---');
       expect(toEntityId('___Multiple___Underscores___')).toBe('multiple_underscores');
+    });
+
+    it('should collapse and trim dashes and underscores', () => {
+      expect(toEntityId('---Multiple---Dashes---')).toBe('multiple_dashes');
+      expect(toEntityId('foo--bar')).toBe('foo_bar');
+      expect(toEntityId('foo-_bar')).toBe('foo_bar');
+      expect(toEntityId('foo_-bar')).toBe('foo_bar');
+      expect(toEntityId('-foo-')).toBe('foo');
+      expect(toEntityId('  -  foo  -  ')).toBe('foo');
     });
 
     it('should produce a lowercase ID', () => {
