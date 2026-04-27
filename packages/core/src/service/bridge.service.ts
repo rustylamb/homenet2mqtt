@@ -687,10 +687,20 @@ export class HomeNetBridge extends EventEmitter {
       eventBus.emit('mqtt:status', { state, portId: mqttPortId });
     };
 
-    this.client.on('connect', () => emitMqttStatus('connected'));
-    this.client.on('reconnect', () => emitMqttStatus('connecting'));
-    this.client.on('offline', () => emitMqttStatus('connecting'));
+    this.client.on('connect', () => {
+      logger.info({ portId: mqttPortId }, '[core] MQTT connected');
+      emitMqttStatus('connected');
+    });
+    this.client.on('reconnect', () => {
+      logger.warn({ portId: mqttPortId }, '[core] MQTT reconnecting');
+      emitMqttStatus('connecting');
+    });
+    this.client.on('offline', () => {
+      logger.warn({ portId: mqttPortId }, '[core] MQTT offline');
+      emitMqttStatus('connecting');
+    });
     this.client.on('close', () => {
+      logger.warn({ portId: mqttPortId }, '[core] MQTT connection closed');
       eventBus.emit('mqtt:disconnected', { portId: mqttPortId });
       emitMqttStatus('disconnected');
     });
