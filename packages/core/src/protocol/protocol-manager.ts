@@ -228,11 +228,11 @@ export class ProtocolManager extends EventEmitter {
 
     let matchedAny = false;
 
-    // Optimization: Only generate hex string if debug logging is enabled
+    // Optimization: Only generate hex string if trace logging is enabled
     // This avoids expensive string allocation/regex ops in the hot path
-    const isDebug = logger.isLevelEnabled('debug');
+    const isTrace = logger.isLevelEnabled('trace');
     let packetHex = '';
-    if (isDebug) {
+    if (isTrace) {
       const parts = new Array(packet.length);
       for (let i = 0; i < packet.length; i++) {
         parts[i] = HEX_STRINGS[packet[i]];
@@ -263,16 +263,16 @@ export class ProtocolManager extends EventEmitter {
         let targetDeviceId = device.getId();
         if (device.config.state_proxy && device.config.target_id) {
           targetDeviceId = device.config.target_id;
-          if (isDebug) {
-            logger.debug(
+          if (isTrace) {
+            logger.trace(
               `[ProtocolManager] Proxying state from ${device.getId()} to ${targetDeviceId}`,
             );
           }
         }
 
-        if (isDebug) {
+        if (isTrace) {
           const stateStr = JSON.stringify(stateUpdates).replace(/["{}]/g, '').replace(/,/g, ', ');
-          logger.debug(
+          logger.trace(
             `[ProtocolManager] ${targetDeviceId} (${device.getName()}): ${packetHex} → {${stateStr}}`,
           );
         }
@@ -287,8 +287,8 @@ export class ProtocolManager extends EventEmitter {
 
     if (!matchedAny) {
       this.emit('unmatched-packet', { packet });
-      if (isDebug) {
-        logger.debug(`[ProtocolManager] Packet not matched: ${packetHex}`);
+      if (isTrace) {
+        logger.trace(`[ProtocolManager] Packet not matched: ${packetHex}`);
       }
     }
   }

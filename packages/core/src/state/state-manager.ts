@@ -180,8 +180,8 @@ export class StateManager {
 
     // If no changes detected and we already have state, skip processing
     if (!hasChanges && Object.keys(currentState).length > 0) {
-      if (logger.isLevelEnabled('debug')) {
-        logger.debug(`[StateManager] ${deviceId}: [unchanged]`);
+      if (logger.isLevelEnabled('trace')) {
+        logger.trace(`[StateManager] ${deviceId}: [unchanged]`);
       }
       return;
     }
@@ -229,9 +229,9 @@ export class StateManager {
       });
       eventBus.emit(`device:${deviceId}:state:changed`, newState);
     } else {
-      if (logger.isLevelEnabled('debug')) {
+      if (logger.isLevelEnabled('trace')) {
         const stateStr = payload.replace(/["{}]/g, '').replace(/,/g, ', ');
-        logger.debug(`[StateManager] ${deviceId}: {${stateStr}} [unchanged]`);
+        logger.trace(`[StateManager] ${deviceId}: {${stateStr}} [unchanged]`);
       }
     }
   }
