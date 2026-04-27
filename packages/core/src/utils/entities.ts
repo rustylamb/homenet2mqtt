@@ -40,3 +40,7 @@ export function findEntityById(
   }
   return cache.get(entityId);
 }
+
+export function clearEntityCache(config: HomenetBridgeConfig): void {
+  entityCache.delete(config);
+}
