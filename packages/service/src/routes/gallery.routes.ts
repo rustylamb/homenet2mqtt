@@ -26,7 +26,7 @@ import {
   IS_DEV,
   LOCAL_GALLERY_DIR,
 } from '../utils/constants.js';
-import { getGalleryRawBaseUrl, getGalleryListUrl } from '../utils/helpers.js';
+import { getGalleryRawBaseUrl, getGalleryListUrl, resolveSecurePath } from '../utils/helpers.js';
 import { getFrontendSettings } from '../services/frontend-settings.service.js';
 import { saveBackup } from '../services/backup.service.js';
 import {
@@ -146,7 +146,10 @@ export function createGalleryRoutes(ctx: GalleryRoutesContext): Router {
       }
 
       if (IS_DEV) {
-        const localFilePath = path.join(LOCAL_GALLERY_DIR, normalizedPath);
+        const localFilePath = resolveSecurePath(LOCAL_GALLERY_DIR, normalizedPath);
+        if (!localFilePath) {
+          return res.status(400).json({ error: 'Invalid gallery path' });
+        }
         try {
           const fileContent = await fs.readFile(localFilePath, 'utf8');
           return res.type('text/yaml').send(fileContent);
@@ -754,7 +757,10 @@ export function createGalleryRoutes(ctx: GalleryRoutesContext): Router {
       }
 
       // Read the current config file
-      const configPath = path.join(CONFIG_DIR, targetConfigFile);
+      const configPath = resolveSecurePath(CONFIG_DIR, targetConfigFile);
+      if (!configPath) {
+        return res.status(400).json({ error: 'Invalid config file' });
+      }
       const fileContent = await fs.readFile(configPath, 'utf8');
       const loadedYamlFromFile = yaml.load(fileContent) as {
         homenet_bridge: PersistableHomenetBridgeConfig;

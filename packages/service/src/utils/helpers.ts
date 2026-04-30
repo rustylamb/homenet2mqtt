@@ -65,7 +65,9 @@ export const fileExists = async (targetPath: string): Promise<boolean> => {
  */
 export const resolveSecurePath = (baseDir: string, filename: string): string | null => {
   const resolvedBase = path.resolve(baseDir);
-  const resolvedPath = path.resolve(baseDir, filename);
+  // Normalize filename to use platform-specific separators and handle potential bypasses
+  const normalizedFilename = filename.replace(/\\/g, path.sep);
+  const resolvedPath = path.resolve(baseDir, normalizedFilename);
 
   if (!resolvedPath.startsWith(resolvedBase + path.sep)) {
     return null;
