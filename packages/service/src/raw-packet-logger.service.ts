@@ -190,13 +190,8 @@ export class RawPacketLoggerService {
     // Files are already sorted by createdAt (newest first)
     const targets = mode === 'all' ? files : files.slice(Math.max(keepCount, 0));
 
-    let deletedCount = 0;
-    for (const file of targets) {
-      const success = await this.deleteFile(file.filename);
-      if (success) {
-        deletedCount++;
-      }
-    }
+    const results = await Promise.all(targets.map((file) => this.deleteFile(file.filename)));
+    const deletedCount = results.filter(Boolean).length;
 
     return deletedCount;
   }
