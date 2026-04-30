@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs/promises';
 import yaml from 'js-yaml';
 import { type HomenetBridgeConfig, normalizeConfig, normalizePortId } from '@rs485-homenet/core';
+import { resolveSecurePath } from '../utils/helpers.js';
 import {
   type SetupWizardService,
   EMPTY_CONFIG_SENTINEL,
@@ -72,11 +73,10 @@ export function createSetupRoutes(ctx: SetupRoutesContext): Router {
       }
 
       const examples = await listExampleConfigs();
-      if (!examples.includes(filename)) {
+      const sourcePath = resolveSecurePath(examplesDir, filename);
+      if (!sourcePath || !examples.includes(filename)) {
         return res.status(404).json({ error: 'EXAMPLE_NOT_FOUND' });
       }
-
-      const sourcePath = path.join(examplesDir, filename);
 
       try {
         const rawContent = await fs.readFile(sourcePath, 'utf-8');
@@ -131,11 +131,11 @@ export function createSetupRoutes(ctx: SetupRoutesContext): Router {
       }
 
       const examples = await listExampleConfigs();
-      if (!examples.includes(filename)) {
+      const sourcePath = resolveSecurePath(examplesDir, filename);
+      if (!sourcePath || !examples.includes(filename)) {
         return res.status(404).json({ error: 'EXAMPLE_NOT_FOUND' });
       }
 
-      const sourcePath = path.join(examplesDir, filename);
       let parsedConfig: Record<string, any>;
 
       try {
@@ -228,11 +228,11 @@ export function createSetupRoutes(ctx: SetupRoutesContext): Router {
       }
 
       const examples = await listExampleConfigs();
-      if (!examples.includes(filename)) {
+      const sourcePath = resolveSecurePath(examplesDir, filename);
+      if (!sourcePath || !examples.includes(filename)) {
         return res.status(404).json({ error: 'EXAMPLE_NOT_FOUND' });
       }
 
-      const sourcePath = path.join(examplesDir, filename);
       let parsedConfig: unknown;
 
       try {
@@ -336,7 +336,10 @@ export function createSetupRoutes(ctx: SetupRoutesContext): Router {
         targetFilename = await getNextConfigFilename();
       }
 
-      const targetPath = path.join(configDir, targetFilename);
+      const targetPath = resolveSecurePath(configDir, targetFilename);
+      if (!targetPath) {
+        return res.status(400).json({ error: 'INVALID_TARGET_FILENAME' });
+      }
 
       let updatedYaml = '';
       let serialPathValue = '';
@@ -361,11 +364,10 @@ export function createSetupRoutes(ctx: SetupRoutesContext): Router {
         }
 
         const examples = await listExampleConfigs();
-        if (!examples.includes(filename)) {
+        const sourcePath = resolveSecurePath(examplesDir, filename);
+        if (!sourcePath || !examples.includes(filename)) {
           return res.status(404).json({ error: 'EXAMPLE_NOT_FOUND' });
         }
-
-        const sourcePath = path.join(examplesDir, filename);
         serialPathValue = serialPath.trim();
         const portIdValue = typeof portId === 'string' ? portId.trim() : undefined;
 

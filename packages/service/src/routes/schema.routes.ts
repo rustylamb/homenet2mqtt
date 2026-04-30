@@ -7,6 +7,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { logger } from '@rs485-homenet/core';
 import { fileURLToPath } from 'node:url';
+import { resolveSecurePath } from '../utils/helpers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +30,10 @@ export function createSchemaRoutes(): Router {
       return res.status(400).json({ error: 'Invalid schema name' });
     }
 
-    const schemaPath = path.join(SCHEMA_DIR, `${schemaName}.schema.json`);
+    const schemaPath = resolveSecurePath(SCHEMA_DIR, `${schemaName}.schema.json`);
+    if (!schemaPath) {
+      return res.status(400).json({ error: 'Invalid schema name' });
+    }
 
     try {
       const content = await fs.readFile(schemaPath, 'utf-8');

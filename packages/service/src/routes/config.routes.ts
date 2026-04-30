@@ -15,6 +15,7 @@ import { BASE_MQTT_PREFIX, ENTITY_TYPE_KEYS } from '../utils/constants.js';
 import type { RateLimiter } from '../utils/rate-limiter.js';
 import type { BridgeInstance, PersistableHomenetBridgeConfig } from '../types/index.js';
 import { saveBackup } from '../services/backup.service.js';
+import { resolveSecurePath } from '../utils/helpers.js';
 
 import {
   findConfigIndexByPortId,
@@ -198,7 +199,10 @@ export function createConfigRoutes(ctx: ConfigRoutesContext): Router {
       }
 
       // 2. Read full config
-      const configPath = path.join(ctx.configDir, targetConfigFile);
+      const configPath = resolveSecurePath(ctx.configDir, targetConfigFile);
+      if (!configPath) {
+        return res.status(404).json({ error: 'Config file not found' });
+      }
       const fileContent = await fs.readFile(configPath, 'utf8');
       const loadedYamlFromFile = yaml.load(fileContent) as {
         homenet_bridge: PersistableHomenetBridgeConfig;
@@ -345,7 +349,10 @@ export function createConfigRoutes(ctx: ConfigRoutesContext): Router {
       }
 
       // 2. Read full config
-      const configPath = path.join(ctx.configDir, targetConfigFile);
+      const configPath = resolveSecurePath(ctx.configDir, targetConfigFile);
+      if (!configPath) {
+        return res.status(404).json({ error: 'Config file not found' });
+      }
       const fileContent = await fs.readFile(configPath, 'utf8');
       const loadedYamlFromFile = yaml.load(fileContent) as {
         homenet_bridge: PersistableHomenetBridgeConfig;

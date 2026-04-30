@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import path from 'node:path';
 import fs from 'node:fs/promises';
+import { resolveSecurePath } from '../utils/helpers.js';
 import yaml from 'js-yaml';
 import type { ConfigEditorService } from '../services/config-editor.service.js';
 
@@ -34,8 +35,8 @@ export function createConfigEditorRoutes(ctx: ConfigEditorRoutesContext): Router
         return res.status(400).json({ error: 'INVALID_FILENAME' });
       }
 
-      const filePath = path.join(configDir, filename);
-      if (!(await fileExists(filePath))) {
+      const filePath = resolveSecurePath(configDir, filename);
+      if (!filePath || !(await fileExists(filePath))) {
         return res.status(404).json({ error: 'FILE_NOT_FOUND' });
       }
 
@@ -69,8 +70,8 @@ export function createConfigEditorRoutes(ctx: ConfigEditorRoutesContext): Router
         return res.status(400).json({ error: 'CONTENT_REQUIRED' });
       }
 
-      const filePath = path.join(configDir, filename);
-      if (!(await fileExists(filePath))) {
+      const filePath = resolveSecurePath(configDir, filename);
+      if (!filePath || !(await fileExists(filePath))) {
         return res.status(404).json({ error: 'FILE_NOT_FOUND' });
       }
 
@@ -137,8 +138,8 @@ export function createConfigEditorRoutes(ctx: ConfigEditorRoutesContext): Router
         return res.status(400).json({ error: 'INVALID_FILENAME' });
       }
 
-      const filePath = path.join(configDir, filename);
-      if (!(await fileExists(filePath))) {
+      const filePath = resolveSecurePath(configDir, filename);
+      if (!filePath || !(await fileExists(filePath))) {
         return res.status(404).json({ error: 'FILE_NOT_FOUND' });
       }
 
@@ -172,13 +173,15 @@ export function createConfigEditorRoutes(ctx: ConfigEditorRoutesContext): Router
 
           if (candidates.length > 0) {
             const nextDefault = candidates[0];
-            const oldPath = path.join(configDir, nextDefault.file);
-            const newPath = path.join(configDir, defaultConfigFilename);
-            await fs.rename(oldPath, newPath);
-            logger.info(
-              { from: nextDefault.file, to: defaultConfigFilename },
-              '[config-editor] Promoted new default config',
-            );
+            const oldPath = resolveSecurePath(configDir, nextDefault.file);
+            const newPath = resolveSecurePath(configDir, defaultConfigFilename);
+            if (oldPath && newPath) {
+              await fs.rename(oldPath, newPath);
+              logger.info(
+                { from: nextDefault.file, to: defaultConfigFilename },
+                '[config-editor] Promoted new default config',
+              );
+            }
           }
         } catch (promoteErr) {
           logger.error({ err: promoteErr }, '[config-editor] Failed to promote default config');
@@ -192,9 +195,11 @@ export function createConfigEditorRoutes(ctx: ConfigEditorRoutesContext): Router
           (f) => /\.homenet_bridge\.ya?ml$/.test(f) || f === defaultConfigFilename,
         );
         if (remainingConfigs.length === 0) {
-          const initMarker = path.join(configDir, '.initialized');
-          await fs.unlink(initMarker).catch(() => {});
-          logger.info('[config-editor] Last bridge deleted, .initialized marker removed');
+          const initMarker = resolveSecurePath(configDir, '.initialized');
+          if (initMarker) {
+            await fs.unlink(initMarker).catch(() => {});
+            logger.info('[config-editor] Last bridge deleted, .initialized marker removed');
+          }
         }
       } catch (err) {
         logger.warn({ err }, '[config-editor] Failed to check/remove .initialized marker');
