@@ -1,0 +1,6 @@
+# Force LF line endings for shell scripts and Dockerfiles regardless of
+# the contributor's `core.autocrlf` setting. CRLF in run.sh breaks the
+# `#!/usr/bin/env bashio` shebang at container start.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.dockerfile text eol=lf
