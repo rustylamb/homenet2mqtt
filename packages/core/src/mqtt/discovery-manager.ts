@@ -387,7 +387,7 @@ export class DiscoveryManager {
         if (entity.state_brightness || entity.command_brightness) {
           payload.brightness_state_topic = `${this.mqttTopicPrefix}/${id}/state`;
           payload.brightness_command_topic = `${this.mqttTopicPrefix}/${id}/brightness/set`;
-          payload.brightness_scale = 255;
+          payload.brightness_scale = entity.brightness_scale ?? 255;
           payload.brightness_value_template = '{{ value_json.brightness }}';
         }
 
@@ -493,8 +493,8 @@ export class DiscoveryManager {
           payload.percentage_command_topic = `${this.mqttTopicPrefix}/${id}/percentage/set`;
           payload.percentage_value_template =
             '{{ value_json.percentage | default(value_json.speed) }}';
-          payload.speed_range_min = 1;
-          payload.speed_range_max = 100;
+          payload.speed_range_min = entity.speed_range_min ?? 1;
+          payload.speed_range_max = entity.speed_range_max ?? 100;
         }
 
         // Preset modes support (schema-based or CEL)

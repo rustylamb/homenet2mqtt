@@ -11,6 +11,7 @@ export interface LightEntity extends EntityConfig {
   // Brightness support
   state_brightness?: StateNumSchemaOrCEL;
   command_brightness?: CommandSchemaOrCEL;
+  brightness_scale?: number; // Max brightness value (default 255)
 
   // Color temperature support (kelvin)
   state_color_temp_kelvin?: StateNumSchemaOrCEL;
