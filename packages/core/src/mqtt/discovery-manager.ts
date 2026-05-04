@@ -24,6 +24,7 @@ interface DiscoveryPayload {
   device_class?: string;
   unit_of_measurement?: string;
   state_class?: string;
+  entity_category?: string;
   icon?: string;
   value_template?: string;
   payload_on?: string;
@@ -358,6 +359,9 @@ export class DiscoveryManager {
     }
     if (entity.state_class) {
       payload.state_class = entity.state_class;
+    }
+    if (entity.entity_category) {
+      payload.entity_category = entity.entity_category;
     }
     if (entity.icon) {
       payload.icon = entity.icon;

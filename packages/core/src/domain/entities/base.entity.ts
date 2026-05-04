@@ -32,6 +32,12 @@ export interface EntityConfig {
   device_class?: string;
   unit_of_measurement?: string;
   state_class?: string;
+  /**
+   * HA entity_category: 'config' (user-tweakable settings the user typically
+   * doesn't touch) or 'diagnostic' (internal/debug values). Hides entity from
+   * the default device card while keeping it available for automations.
+   */
+  entity_category?: 'config' | 'diagnostic';
   icon?: string;
   discovery_always?: boolean;
   discovery_linked_id?: string;
