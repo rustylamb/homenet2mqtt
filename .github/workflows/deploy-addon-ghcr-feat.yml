@@ -66,7 +66,11 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT (GHCR_PAT secret with write:packages scope) because the
+          # ghcr.io/rustylamb/homenet2mqtt package was pre-existing and the
+          # default GITHUB_TOKEN lacks write access to it without explicit
+          # "Manage Actions access" linkage on the package settings.
+          password: ${{ secrets.GHCR_PAT }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
