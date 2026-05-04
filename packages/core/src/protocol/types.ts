@@ -269,6 +269,59 @@ export interface DeviceConfig {
   optimistic?: boolean;
   state_proxy?: boolean;
   target_id?: string;
+  /**
+   * Samsung NASA HVAC config (entity is matched by NASA frame src/dst rather than byte position).
+   * When present, the entity is parsed by NasaDevice instead of GenericDevice.
+   */
+  nasa?: NasaEntityConfig;
+}
+
+/**
+ * Samsung NASA address: `[class, channel, address]`.
+ * Each accepts either a 24-bit number (`0x100100`) or a 3-byte array (`[0x10, 0x01, 0x00]`).
+ * Use `0xff` in any byte to wildcard that position when matching incoming frames.
+ */
+export type NasaAddrSpec = number | [number, number, number];
+
+/** How to interpret a NASA message value into an entity attribute. */
+export interface NasaMessageBinding {
+  /** Resulting attribute on the entity state object (e.g. `mode`, `target_temperature`). */
+  attribute: string;
+  /** Value type. `auto` infers from the message id (recommended). */
+  type?: 'auto' | 'enum' | 'uint8' | 'int16' | 'uint16' | 'int32' | 'uint32';
+  /** Multiply the decoded numeric value by this factor (e.g. `0.1` for 0.1°C scaling). */
+  scale?: number;
+  /** Map raw integer values to enum strings: `{ 0: 'off', 1: 'on' }`. */
+  values?: Record<number, string | number>;
+}
+
+/** Single-message command spec (e.g. `power: off` writes one ENUM message). */
+export interface NasaSingleCommand {
+  /** Logical message name (must exist in `nasa.messages`). */
+  message: string;
+  /** Static value to send. Mutually exclusive with `value_from`. */
+  value?: number;
+  /** When set, take the numeric value from the runtime command argument. */
+  value_from?: 'input';
+  /** Override packet's data type (default: 'write' = 0x2). */
+  data_type?: 'read' | 'write' | 'request' | 'notification' | 'response';
+}
+
+/** Multi-message command (sets several messages atomically — e.g. heat sets power+mode). */
+export interface NasaMultiCommand {
+  messages: Array<{ name: string; value?: number; value_from?: 'input' }>;
+  data_type?: 'read' | 'write' | 'request' | 'notification' | 'response';
+}
+
+export type NasaCommandSpec = NasaSingleCommand | NasaMultiCommand;
+
+export interface NasaEntityConfig {
+  /** Filter incoming frames by source address (24-bit). 0xff bytes act as wildcards. */
+  rx?: { src?: NasaAddrSpec; dst?: NasaAddrSpec };
+  /** Outgoing frame source/dest used by command_* specs. */
+  tx?: { src?: NasaAddrSpec; dst?: NasaAddrSpec };
+  /** Logical message map: `<name>: { id: 0x4001, attribute: 'mode', ... }` */
+  messages: Record<string, NasaMessageBinding & { id: number }>;
 }
 
 /**
