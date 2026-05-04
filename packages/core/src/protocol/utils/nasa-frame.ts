@@ -242,7 +242,10 @@ function packCmd1(input: NasaEncodeInput): number {
 
 function packCmd2(input: NasaEncodeInput): number {
   if (input.cmd2 !== undefined) return input.cmd2 & 0xff;
-  const pt = (input.packetType ?? 0) & 0xf;
+  // PacketType.Normal = 1 (lanwin protocol_nasa.h). Default to Normal so callers
+  // that omit packetType don't accidentally emit packetType=0 (which Samsung
+  // indoor units reject or beep on).
+  const pt = (input.packetType ?? 1) & 0xf;
   const dt = (input.dataType ?? 0) & 0xf;
   return (pt << 4) | dt;
 }

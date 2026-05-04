@@ -456,10 +456,13 @@ export function validateConfig(
       rx_max_length,
       rx_length,
     } = config.packet_defaults;
-    if (rx_checksum && rx_checksum2) {
+    // `rx_checksum: 'none'` is allowed together with rx_checksum2 — this is the
+    // standard NASA-style framing (no 1-byte sum, but a CRC16 trailer). The
+    // packet-parser explicitly supports this combination.
+    if (rx_checksum && rx_checksum !== 'none' && rx_checksum2) {
       errors.push('packet_defaults에서 rx_checksum과 rx_checksum2는 동시에 설정할 수 없습니다.');
     }
-    if (tx_checksum && tx_checksum2) {
+    if (tx_checksum && tx_checksum !== 'none' && tx_checksum2) {
       errors.push('packet_defaults에서 tx_checksum과 tx_checksum2는 동시에 설정할 수 없습니다.');
     }
     if (

@@ -1,7 +1,7 @@
 {
   "name": "rs485-homenet-to-mqtt-bridge",
   "private": true,
-  "version": "2026.5.1-feat.ed35f637-feat.ef30de08",
+  "version": "2026.5.1-feat.ed35f637-feat.ef30de08-feat.a1be1032",
   "packageManager": "pnpm@10.18.2",
   "workspaces": [
     "packages/*"

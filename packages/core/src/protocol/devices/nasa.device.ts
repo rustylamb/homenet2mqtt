@@ -59,7 +59,10 @@ export class NasaDevice extends Device {
 
     this.rxSrc = parseAddrFilter(this.nasaConfig.rx?.src);
     this.rxDst = parseAddrFilter(this.nasaConfig.rx?.dst);
-    this.txSrc = resolveAddrBytes(this.nasaConfig.tx?.src) ?? null;
+    // Default controller src follows lanwin's choice: JIGTester (0x80) class,
+    // channel 0xFF, address 0. This is a non-Samsung controller class so it
+    // doesn't conflict with the wallpad (which uses 0x6A DMS) or factory units.
+    this.txSrc = resolveAddrBytes(this.nasaConfig.tx?.src) ?? [0x80, 0xff, 0x00];
     this.txDst = resolveAddrBytes(this.nasaConfig.tx?.dst) ?? null;
   }
 
@@ -163,16 +166,23 @@ export class NasaDevice extends Device {
       resolvedMessages.push({ id: binding.id, value: scaled });
     }
 
-    const dataTypeName = (spec as NasaSingleCommand | NasaMultiCommand).data_type ?? 'write';
+    // Default to Request (0x3), not Write (0x2). Samsung indoor units handle
+    // Request as "set this state, please" while Write (used internally for
+    // EEPROM-style register writes) often triggers a beep/alarm. Verified
+    // against captured wallpad commands (cmd2=0x13 = packetType 1 + dataType 3)
+    // and lanwin/esphome_samsung_ac which uses Request for all state changes.
+    const dataTypeName = (spec as NasaSingleCommand | NasaMultiCommand).data_type ?? 'request';
     const dataType = DATA_TYPE_NUMBERS[dataTypeName];
 
     const frame = encodeNasaFrame({
       src: this.txSrc,
       dst: this.txDst,
-      isInfo: false,
+      // isInfo bit (cmd1 bit 7) is set for normal control packets. lanwin's
+      // createa_partial defaults to true; wallpad captures show 0xC0.
+      isInfo: true,
       protocolVersion: 2,
       retryCount: 0,
-      packetType: 1,
+      packetType: 1, // PacketType.Normal
       dataType,
       packetNumber: this.nextPacketNumber(),
       messages: resolvedMessages,
@@ -196,6 +206,9 @@ export class NasaDevice extends Device {
   }
 
   private nextPacketNumber(): number {
+    // lanwin convention: packetNumber 0 is reserved (used as "no number"), so
+    // skip it on every wrap.
+    if (this.packetCounter === 0) this.packetCounter = 1;
     const n = this.packetCounter;
     this.packetCounter = (this.packetCounter + 1) & 0xff;
     return n;
@@ -282,7 +295,10 @@ function decodeMessageValue(
     return binding.values[raw];
   }
   if (binding.scale) {
-    return raw * binding.scale;
+    // Round to 3 decimals to mitigate float noise — e.g. 274 * 0.1 in JS
+    // produces 27.400000000000002, which makes MQTT payloads ugly and breaks
+    // simple equality assertions in HA automations.
+    return Math.round(raw * binding.scale * 1000) / 1000;
   }
   return raw;
 }
