@@ -172,4 +172,53 @@ describe('2-Byte Checksum', () => {
       expect(packet).toEqual([0xf7, 0x01, 0xaa, 0xbb]);
     });
   });
+
+  describe('crc16_xmodem_nasa', () => {
+    // Samsung NASA HVAC variant. CRC over `data[3:-3]`:
+    //   skip header(1) + size(2) at start; CRC(2) + footer(1) at end auto-excluded.
+    // Real captured frames from Samsung indoor unit (port samsung_aircon).
+    const realFrames: Array<[string, number]> = [
+      ['320011100100b0ffffc0141501200f00e96d34', 0xe96d],
+      ['3200116aeeffb0ffffc0146e0120040097d734', 0x97d7],
+      ['320030100100b001ffc0140e0782080064829f005f821cfff682f30007841700000043841b00000000841c0000000000a934', 0x00a9],
+      ['32003c100100b001ffc014120c020200000410000000002400ff05ffff240100010000800d00801000801700800301800100804601809d0180b281efdc34', 0xefdc],
+    ];
+
+    // verifyChecksum2FromBuffer signature: (buf, type, headerLength, dataEnd, baseOffset, hi, lo)
+    // where dataEnd = checksumStart - baseOffset (= position of first CRC byte relative to baseOffset).
+    // For our self-contained frame: baseOffset=0, dataEnd = length - 2(crc) - 1(footer).
+    for (const [hex, expected] of realFrames) {
+      it(`verifies real Samsung NASA frame (size=${parseInt(hex.substring(2, 6), 16)})`, () => {
+        const buf = Buffer.from(hex, 'hex');
+        const checksumStart = buf.length - 2 - 1; // -2 CRC, -1 footer (0x34)
+        const ok = verifyChecksum2FromBuffer(
+          buf,
+          'crc16_xmodem_nasa',
+          1, // headerLength (0x32)
+          checksumStart,
+          0,
+          buf[checksumStart],
+          buf[checksumStart + 1],
+        );
+        expect(ok).toBe(true);
+        expect((buf[checksumStart] << 8) | buf[checksumStart + 1]).toBe(expected);
+      });
+    }
+
+    it('rejects frame with corrupted byte', () => {
+      const buf = Buffer.from('320011100100b0ffffc0141501200f00e96d34', 'hex');
+      buf[5] = 0xaa;
+      const checksumStart = buf.length - 2 - 1;
+      const ok = verifyChecksum2FromBuffer(
+        buf,
+        'crc16_xmodem_nasa',
+        1,
+        checksumStart,
+        0,
+        buf[checksumStart],
+        buf[checksumStart + 1],
+      );
+      expect(ok).toBe(false);
+    });
+  });
 });

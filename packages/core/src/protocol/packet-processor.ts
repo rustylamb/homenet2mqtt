@@ -17,6 +17,7 @@ import { SelectDevice } from './devices/select.device.js';
 import { TextSensorDevice } from './devices/text-sensor.device.js';
 import { TextDevice } from './devices/text.device.js';
 import { BinarySensorDevice } from './devices/binary-sensor.device.js';
+import { NasaDevice } from './devices/nasa.device.js';
 import { ProtocolConfig, CommandResult } from './types.js';
 import { toEntityId } from '../utils/romanize.js';
 import { logger } from '../utils/logger.js';
@@ -103,7 +104,10 @@ export class PacketProcessor extends EventEmitter {
               `[PacketProcessor] Generated ID for ${type}: ${entity.name} -> ${entity.id}`,
             );
           }
-          const DeviceClass = deviceMap[type] || GenericDevice;
+          // Entities with a `nasa:` block are decoded by NasaDevice regardless of type.
+          // The entity type still controls HA discovery (climate/sensor/etc).
+          const DeviceClass =
+            (entity as any).nasa !== undefined ? NasaDevice : deviceMap[type] || GenericDevice;
           const device = new DeviceClass(entity, protocolConfig);
           device.setErrorReporter((payload: EntityErrorEvent) => {
             this.emit('entity-error', { ...payload, portId: this.portId });

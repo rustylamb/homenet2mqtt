@@ -27,6 +27,7 @@ export const STANDARD_CHECKSUM2_TYPES = [
   'crc_ccitt_xmodem',
   'crc16_xmodem',
   'crc16_xmodem_no_header',
+  'crc16_xmodem_nasa',
   'crc16_ccitt_false',
   'crc16_ccitt_false_no_header',
   'crc16_modbus',
@@ -51,6 +52,12 @@ type Checksum2Resolution = {
   normalizedType: Checksum2Type;
   baseType: Crc16Variant | 'xor_add';
   includeHeader: boolean;
+  /**
+   * Additional bytes to skip from the start of the CRC range, beyond the header.
+   * Used by NASA-style framings where the size field (after header) is not part of the CRC range.
+   * Default 0.
+   */
+  extraSkip?: number;
 };
 
 type Crc8Variant = 'crc8' | 'crc8_maxim' | 'crc8_rohc' | 'crc8_wcdma';
@@ -191,6 +198,15 @@ function resolveChecksum2Type(type: Checksum2Type): Checksum2Resolution {
       normalizedType: type,
       baseType: 'crc16_xmodem',
       includeHeader: false,
+    };
+  }
+  if (type === 'crc16_xmodem_nasa') {
+    // NASA: skip 1-byte header + 2-byte size field. Total skip = 3 from frame start.
+    return {
+      normalizedType: type,
+      baseType: 'crc16_xmodem',
+      includeHeader: false,
+      extraSkip: 2,
     };
   }
 
@@ -601,7 +617,7 @@ export function calculateChecksum2FromBuffer(
     case 'crc16_x25':
       return crc16Range(
         buffer,
-        resolved.includeHeader ? dataStart : headerStart,
+        (resolved.includeHeader ? dataStart : headerStart) + (resolved.extraSkip ?? 0),
         dataStop,
         CRC16_SPECS[resolved.baseType],
       );
@@ -637,7 +653,7 @@ export function verifyChecksum2FromBuffer(
     case 'crc16_x25':
       return verifyCrc16Range(
         buffer,
-        resolved.includeHeader ? dataStart : headerStart,
+        (resolved.includeHeader ? dataStart : headerStart) + (resolved.extraSkip ?? 0),
         dataStop,
         expectedHigh,
         expectedLow,
@@ -771,6 +787,15 @@ export function getChecksum2Verifier(type: Checksum2Type): Checksum2Verifier | n
     default:
       return null;
   }
+}
+
+/**
+ * Returns extra bytes to skip beyond the standard header for the CRC range.
+ * Used by NASA-style framings where the size field follows the header but isn't part of CRC.
+ */
+export function getChecksum2ExtraSkip(type: Checksum2Type): number {
+  const resolved = resolveChecksum2Type(type);
+  return resolved.extraSkip ?? 0;
 }
 
 /**
