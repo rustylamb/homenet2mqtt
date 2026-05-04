@@ -629,10 +629,10 @@ export class PacketParser {
               // Footer found but checksum failed. Continue searching after this footer.
               searchIdx = foundIdx + 1;
             }
-          } else if (this.isStandard2Byte) {
-            // Incremental Checksum Strategy for 2-byte Footer Delimited
-            // Incremental optimization path currently specializes on xor_add.
-            // Other standard 2-byte checksums use the generic verifier path below.
+          } else if (this.isStandard2Byte && this.cachedChecksum2Type === 'xor_add') {
+            // Incremental Checksum Strategy for 2-byte Footer Delimited (xor_add only).
+            // Other standard 2-byte checksums (crc16_*) fall through to the generic verifier
+            // path below since they aren't trivially incremental over a sliding window.
 
             let runningCrc = 0;
             let runningTemp = 0;
@@ -1232,10 +1232,12 @@ export class PacketParser {
    */
   private verifyChecksum(buffer: Buffer, offset: number, length: number): boolean {
     if (!this.isLengthAllowed(length)) return false;
-    if (this.isChecksumNone) return true;
+    // Only short-circuit when BOTH 1-byte and 2-byte checksums are absent.
+    // (NASA-style framings use rx_checksum: none + rx_checksum2: crc16_xmodem_nasa.)
+    if (this.isChecksumNone && !this.defaults.rx_checksum2) return true;
 
     // 1-byte Checksum
-    if (this.defaults.rx_checksum) {
+    if (this.defaults.rx_checksum && !this.isChecksumNone) {
       let checksumByte = buffer[offset + length - 1];
       let dataEnd = offset + length - 1;
 
