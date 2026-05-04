@@ -89,12 +89,22 @@ export class NasaDevice extends Device {
     }
 
     const updates: Record<string, any> = {};
+    const internalUpdates: Record<string, any> = {};
     for (const message of frame.messages) {
       const binding = this.idToBinding.get(message.id);
       if (!binding) continue;
       const decoded = decodeMessageValue(message, binding);
       if (decoded === undefined) continue;
-      updates[binding.attribute] = decoded;
+      if (binding.internal) {
+        internalUpdates[binding.attribute] = decoded;
+      } else {
+        updates[binding.attribute] = decoded;
+      }
+    }
+    // Always commit internal-only changes to device.state so tx_carry_state
+    // can read them, even when there's nothing to publish externally.
+    if (Object.keys(internalUpdates).length > 0) {
+      this.updateState(internalUpdates);
     }
     if (Object.keys(updates).length === 0) {
       return null;

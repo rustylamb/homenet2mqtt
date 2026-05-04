@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Buffer } from 'buffer';
 import { NasaDevice } from '../../src/protocol/devices/nasa.device';
-import { decodeNasaFrame } from '../../src/protocol/utils/nasa-frame';
+import { decodeNasaFrame, encodeNasaFrame } from '../../src/protocol/utils/nasa-frame';
 import { DeviceConfig, ProtocolConfig } from '../../src/protocol/types';
 
 const PROTOCOL: ProtocolConfig = {
@@ -271,6 +271,108 @@ describe('NasaDevice — wallpad-style 5-message bundle (tx_prefix + tx_carry_st
     expect(decoded.messages[0].id).toBe(0x4050);
     expect(decoded.messages[1].id).toBe(0x4201);
     expect(decoded.messages[1].value.readInt16BE(0)).toBe(240);
+  });
+});
+
+describe('NasaDevice — internal binding (carry-only, not published)', () => {
+  function buildSwitchConfig(): DeviceConfig {
+    return {
+      id: 'aircon_swing',
+      name: 'aircon_swing',
+      nasa: {
+        rx: { src: 0x200100, dst: 0xb301ff },
+        tx: { dst: 0x200100 },
+        tx_prefix: [{ id: 0x4050, value: 0 }],
+        tx_carry_state: ['power', 'mode', 'fan_mode', 'target_temp'],
+        messages: {
+          // Internal: needed for carry, but not published as switch state.
+          power:       { id: 0x4000, attribute: 'power',              type: 'enum',  values: { 0: 'off', 1: 'on' }, internal: true },
+          mode:        { id: 0x4001, attribute: 'mode',               type: 'enum',  values: { 0: 'auto', 1: 'cool' }, internal: true },
+          fan_mode:    { id: 0x4006, attribute: 'fan_mode',           type: 'enum',  values: { 0: 'auto', 1: 'low' }, internal: true },
+          target_temp: { id: 0x4201, attribute: 'target_temperature', type: 'int16', scale: 0.1, internal: true },
+          // External: this is the switch state
+          swing_lr:    { id: 0x407e, attribute: 'state',              type: 'enum',  values: { 0: 'OFF', 1: 'ON' } },
+        },
+      },
+      command_on:  { message: 'swing_lr', value: 1 },
+      command_off: { message: 'swing_lr', value: 0 },
+    } as any;
+  }
+
+  // Build a frame with all 5 messages (mimics outdoor broadcast)
+  // power=on, mode=cool, fan_mode=low, target=22°C, swing_lr=ON
+  const FULL_FRAME = (() => {
+    // We hand-construct the bytes by encoding via the public encoder
+    return Buffer.from(
+      // Use the encoder via building a frame in the test
+      [],
+    );
+  })();
+
+  it('parseData returns ONLY the external attribute', () => {
+    const dev = new NasaDevice(buildSwitchConfig(), PROTOCOL);
+    // Synthesize a broadcast frame using the encoder
+    // encodeNasaFrame imported at top of file
+    const frame = encodeNasaFrame({
+      src: [0x20, 0x01, 0x00],
+      dst: [0xb3, 0x01, 0xff],
+      isInfo: true,
+      protocolVersion: 2,
+      retryCount: 0,
+      packetType: 1,
+      dataType: 4, // notif
+      packetNumber: 1,
+      messages: [
+        { id: 0x4000, value: 1 },
+        { id: 0x4001, value: 1 },
+        { id: 0x4006, value: 1 },
+        { id: 0x4201, value: 220 },
+        { id: 0x407e, value: 1 },
+      ],
+    });
+    const updates = dev.parseData(frame);
+    expect(updates).not.toBeNull();
+    // Only `state` is published; power/mode/fan/target are internal
+    expect(Object.keys(updates!).sort()).toEqual(['state']);
+    expect(updates!.state).toBe('ON');
+  });
+
+  it('command frame still carries internal state in 5-msg bundle', () => {
+    const dev = new NasaDevice(buildSwitchConfig(), PROTOCOL);
+    // Seed via parseData (uses internal bindings)
+    // encodeNasaFrame imported at top of file
+    const seedFrame = encodeNasaFrame({
+      src: [0x20, 0x01, 0x00],
+      dst: [0xb3, 0x01, 0xff],
+      isInfo: true,
+      protocolVersion: 2,
+      retryCount: 0,
+      packetType: 1,
+      dataType: 4,
+      packetNumber: 1,
+      messages: [
+        { id: 0x4000, value: 1 },
+        { id: 0x4001, value: 1 },
+        { id: 0x4006, value: 1 },
+        { id: 0x4201, value: 220 },
+        { id: 0x407e, value: 0 },
+      ],
+    });
+    dev.parseData(seedFrame);
+    // Switch command emits 6 messages: prefix + 4 carry slots + the switch's
+    // own explicit message (swing_lr) appended after the carry list.
+    const out = dev.constructCommand('on');
+    const decoded = decodeNasaFrame(Buffer.from(out as number[]));
+    expect(decoded.messages).toHaveLength(6);
+    expect(decoded.messages[0].id).toBe(0x4050); // prefix
+    expect(decoded.messages[1].id).toBe(0x4000); // carried power
+    expect(decoded.messages[1].value[0]).toBe(1); // carried power=on
+    expect(decoded.messages[2].id).toBe(0x4001); // carried mode
+    expect(decoded.messages[3].id).toBe(0x4006); // carried fan_mode
+    expect(decoded.messages[4].id).toBe(0x4201); // carried setpoint
+    expect(decoded.messages[4].value.readInt16BE(0)).toBe(220);
+    expect(decoded.messages[5].id).toBe(0x407e); // explicit swing_lr
+    expect(decoded.messages[5].value[0]).toBe(1); // ON
   });
 });
 
