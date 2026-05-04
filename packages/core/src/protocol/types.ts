@@ -293,6 +293,13 @@ export interface NasaMessageBinding {
   scale?: number;
   /** Map raw integer values to enum strings: `{ 0: 'off', 1: 'on' }`. */
   values?: Record<number, string | number>;
+  /**
+   * If true, the message is decoded into device.state (so it can be used by
+   * tx_carry_state) but is NOT included in the MQTT state payload. Useful when
+   * a switch/sensor entity needs to carry the climate state in its outgoing
+   * commands without polluting its own published attributes.
+   */
+  internal?: boolean;
 }
 
 /** Single-message command spec (e.g. `power: off` writes one ENUM message). */
