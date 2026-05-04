@@ -596,26 +596,15 @@ export class DiscoveryManager {
           payload.action_template = '{{ value_json.action }}';
         }
 
-        // Dynamically determine available modes
+        // Dynamically determine available modes — accept either state_X or command_X
         const availableModes: string[] = [];
-        if (entity.state_off) {
-          availableModes.push('off');
-        }
-        if (entity.state_heat) {
-          availableModes.push('heat');
-        }
-        if (entity.state_cool) {
-          availableModes.push('cool');
-        }
-        if (entity.state_fan_only) {
-          availableModes.push('fan_only');
-        }
-        if (entity.state_dry) {
-          availableModes.push('dry');
-        }
-        if (entity.state_auto) {
-          // Assuming 'state_auto' property for auto mode
-          availableModes.push('auto');
+        const modeNames: Array<'off' | 'heat' | 'cool' | 'fan_only' | 'dry' | 'auto'> = [
+          'off', 'heat', 'cool', 'fan_only', 'dry', 'auto',
+        ];
+        for (const m of modeNames) {
+          if ((entity as any)[`state_${m}`] || (entity as any)[`command_${m}`]) {
+            availableModes.push(m);
+          }
         }
 
         // Only set mode topics/templates when modes are available
@@ -623,7 +612,9 @@ export class DiscoveryManager {
           payload.modes = availableModes;
           payload.mode_command_topic = `${this.mqttTopicPrefix}/${id}/mode/set`;
           payload.mode_state_topic = `${this.mqttTopicPrefix}/${id}/state`;
-          payload.mode_state_template = '{{ value_json.mode }}';
+          // When power is off, force HA mode to 'off' regardless of last broadcast mode
+          payload.mode_state_template =
+            "{{ 'off' if value_json.power == 'off' else value_json.mode }}";
         }
 
         const fanModes = new Set<string>();
