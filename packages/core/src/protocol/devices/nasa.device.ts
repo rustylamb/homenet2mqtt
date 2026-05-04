@@ -243,6 +243,18 @@ export class NasaDevice extends Device {
       packetNumber: this.nextPacketNumber(),
       messages: resolvedMessages,
     });
+    // INFO-level so the TX frame is visible in addon logs without enabling
+    // debug. Crucial for reverse-engineering — outgoing frames don't go
+    // through the addon's RX cache, so this is the only way to see them.
+    logger.info(
+      {
+        entityId: this.config.id,
+        command: commandName,
+        frame: frame.toString('hex'),
+        messages: resolvedMessages.map((m) => `0x${m.id.toString(16).padStart(4, '0')}=${m.value}`),
+      },
+      '[NasaDevice] TX command',
+    );
     return Array.from(frame);
   }
 
