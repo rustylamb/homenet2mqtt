@@ -193,6 +193,87 @@ describe('NasaDevice — command construction', () => {
   });
 });
 
+describe('NasaDevice — wallpad-style 5-message bundle (tx_prefix + tx_carry_state)', () => {
+  function buildBundleConfig(): DeviceConfig {
+    return {
+      id: 'aircon_test',
+      name: 'aircon_test',
+      nasa: {
+        rx: { src: 0x200100, dst: 0xb301ff },
+        tx: { dst: 0x200100 },
+        // Wallpad always prefixes commands with this marker
+        tx_prefix: [{ id: 0x4050, value: 0 }],
+        // Order matches captured wallpad bundle: power → mode → fan → setpoint
+        tx_carry_state: ['power', 'mode', 'fan_mode', 'target_temp'],
+        messages: {
+          power:        { id: 0x4000, attribute: 'power',              type: 'enum',  values: { 0: 'off', 1: 'on' } },
+          mode:         { id: 0x4001, attribute: 'mode',               type: 'enum',  values: { 0: 'auto', 1: 'cool', 2: 'dry', 3: 'fan_only' } },
+          fan_mode:     { id: 0x4006, attribute: 'fan_mode',           type: 'enum',  values: { 0: 'auto', 1: 'low', 2: 'medium', 3: 'high' } },
+          target_temp:  { id: 0x4201, attribute: 'target_temperature', type: 'int16', scale: 0.1 },
+        },
+      },
+      command_off:  { message: 'power', value: 0 },
+      command_cool: { messages: [{ name: 'power', value: 1 }, { name: 'mode', value: 1 }] },
+      command_temperature: { message: 'target_temp', value_from: 'input' },
+    } as any;
+  }
+
+  it('emits 5-message bundle (prefix + 4 carried) on a single-attribute change', () => {
+    const dev = new NasaDevice(buildBundleConfig(), PROTOCOL);
+    // Seed device state from a "received" frame so carry has values
+    (dev as any).updateState({
+      power: 'on',
+      mode: 'cool',
+      fan_mode: 'high',
+      target_temperature: 25.0,
+    });
+    const out = dev.constructCommand('off');
+    const decoded = decodeNasaFrame(Buffer.from(out as number[]));
+    expect(decoded.messages).toHaveLength(5);
+    expect(decoded.messages[0].id).toBe(0x4050); // marker
+    expect(decoded.messages[0].value).toEqual(Buffer.from([0]));
+    expect(decoded.messages[1].id).toBe(0x4000); // power
+    expect(decoded.messages[1].value).toEqual(Buffer.from([0])); // explicitly off
+    expect(decoded.messages[2].id).toBe(0x4001); // mode (carried)
+    expect(decoded.messages[2].value).toEqual(Buffer.from([1])); // 'cool' → 1
+    expect(decoded.messages[3].id).toBe(0x4006); // fan (carried)
+    expect(decoded.messages[3].value).toEqual(Buffer.from([3])); // 'high' → 3
+    expect(decoded.messages[4].id).toBe(0x4201); // setpoint (carried)
+    expect(decoded.messages[4].value.readInt16BE(0)).toBe(250); // 25.0 / 0.1
+  });
+
+  it('overrides carried state with explicit command values', () => {
+    const dev = new NasaDevice(buildBundleConfig(), PROTOCOL);
+    (dev as any).updateState({
+      power: 'off',
+      mode: 'cool',
+      fan_mode: 'auto',
+      target_temperature: 22.0,
+    });
+    const out = dev.constructCommand('cool'); // sets power=1, mode=1
+    const decoded = decodeNasaFrame(Buffer.from(out as number[]));
+    expect(decoded.messages).toHaveLength(5);
+    // explicit values won
+    expect(decoded.messages[1].value[0]).toBe(1); // power=1 (was off)
+    expect(decoded.messages[2].value[0]).toBe(1); // mode=cool (1)
+    // carried values
+    expect(decoded.messages[3].value[0]).toBe(0); // fan_mode 'auto' → 0
+    expect(decoded.messages[4].value.readInt16BE(0)).toBe(220); // 22.0
+  });
+
+  it('skips carry slots that have no state yet (avoids sending NaN)', () => {
+    const dev = new NasaDevice(buildBundleConfig(), PROTOCOL);
+    // No updateState — device starts blank
+    const out = dev.constructCommand('temperature', 24);
+    const decoded = decodeNasaFrame(Buffer.from(out as number[]));
+    // Only prefix + setpoint (the rest skipped because state is empty)
+    expect(decoded.messages).toHaveLength(2);
+    expect(decoded.messages[0].id).toBe(0x4050);
+    expect(decoded.messages[1].id).toBe(0x4201);
+    expect(decoded.messages[1].value.readInt16BE(0)).toBe(240);
+  });
+});
+
 describe('NasaDevice — wildcard address matching', () => {
   it('treats 0xff in any byte as wildcard', () => {
     const cfg: DeviceConfig = {

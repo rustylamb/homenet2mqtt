@@ -141,30 +141,86 @@ export class NasaDevice extends Device {
       return null;
     }
 
+    const explicit = new Set<string>(messages.map((m) => m.name));
     const resolvedMessages: Array<{ id: number; value: number }> = [];
-    for (const m of messages) {
-      const binding = this.nameToBinding.get(m.name);
-      if (!binding) {
-        this.reportError({
-          type: 'command',
-          message: `command ${commandName} references unknown message '${m.name}'`,
-          context: { command: commandName },
-        });
-        return null;
+
+    // 1. Optional constant prefix (wallpad's 0x4050=0 marker etc.)
+    if (this.nasaConfig.tx_prefix) {
+      for (const p of this.nasaConfig.tx_prefix) {
+        resolvedMessages.push({ id: p.id, value: p.value });
       }
-      const numericValue = m.value;
-      if (typeof numericValue !== 'number' || Number.isNaN(numericValue)) {
-        this.reportError({
-          type: 'command',
-          message: `command ${commandName} (msg ${m.name}) has no numeric value`,
-          context: { command: commandName, value },
-        });
-        return null;
-      }
-      // For VAR with scale (e.g. temperature 0.1°C), multiply by 1/scale before encoding
-      const scaled = binding.scale ? Math.round(numericValue / binding.scale) : numericValue;
-      resolvedMessages.push({ id: binding.id, value: scaled });
     }
+
+    // 2. Explicit command messages, optionally interleaved with carried state.
+    // To match the wallpad's bundle order we emit tx_carry_state in the order
+    // listed in yaml, taking the explicit value when supplied or the current
+    // device state otherwise.
+    const carryNames = this.nasaConfig.tx_carry_state ?? [];
+    if (carryNames.length > 0) {
+      // Build a lookup for explicit values
+      const explicitByName = new Map(messages.map((m) => [m.name, m.value]));
+      for (const name of carryNames) {
+        const binding = this.nameToBinding.get(name);
+        if (!binding) {
+          this.reportError({
+            type: 'command',
+            message: `tx_carry_state references unknown message '${name}'`,
+            context: { command: commandName },
+          });
+          return null;
+        }
+        let raw: number | undefined;
+        if (explicitByName.has(name)) {
+          raw = encodeBindingValue(binding, explicitByName.get(name)!);
+        } else {
+          // Pull from current device state. If state is empty (device hasn't
+          // received any frame yet), skip — sending undefined would beep.
+          const current = this.getState()[binding.attribute];
+          raw = encodeStateValue(binding, current);
+        }
+        if (raw === undefined) {
+          // No state cached and no explicit value — skip this carry slot.
+          // The indoor unit may beep but better than sending NaN bytes.
+          continue;
+        }
+        resolvedMessages.push({ id: binding.id, value: raw });
+      }
+      // Also emit any explicit messages NOT covered by carry list (rare —
+      // would mean yaml lists a one-off message outside the bundle).
+      for (const m of messages) {
+        if (carryNames.includes(m.name)) continue;
+        const binding = this.nameToBinding.get(m.name)!;
+        const raw = encodeBindingValue(binding, m.value);
+        if (raw === undefined) continue;
+        resolvedMessages.push({ id: binding.id, value: raw });
+      }
+    } else {
+      // No carry list — emit explicit messages in declaration order.
+      for (const m of messages) {
+        const binding = this.nameToBinding.get(m.name);
+        if (!binding) {
+          this.reportError({
+            type: 'command',
+            message: `command ${commandName} references unknown message '${m.name}'`,
+            context: { command: commandName },
+          });
+          return null;
+        }
+        const raw = encodeBindingValue(binding, m.value);
+        if (raw === undefined) {
+          this.reportError({
+            type: 'command',
+            message: `command ${commandName} (msg ${m.name}) has no numeric value`,
+            context: { command: commandName, value },
+          });
+          return null;
+        }
+        resolvedMessages.push({ id: binding.id, value: raw });
+      }
+    }
+    // Suppress unused-variable warning; we still want `explicit` for future
+    // diagnostics if the carry path needs to detect double-bookkeeping.
+    void explicit;
 
     // Default to Request (0x3), not Write (0x2). Samsung indoor units handle
     // Request as "set this state, please" while Write (used internally for
@@ -301,6 +357,47 @@ function decodeMessageValue(
     return Math.round(raw * binding.scale * 1000) / 1000;
   }
   return raw;
+}
+
+/**
+ * Convert an explicit numeric command value into the integer that should hit
+ * the wire — applying the inverse of the binding's `scale`. Returns undefined
+ * when the input cannot be converted.
+ */
+function encodeBindingValue(
+  binding: NasaMessageBinding & { id: number },
+  value: number,
+): number | undefined {
+  if (typeof value !== 'number' || Number.isNaN(value)) return undefined;
+  if (binding.scale) {
+    return Math.round(value / binding.scale);
+  }
+  return value;
+}
+
+/**
+ * Convert a value pulled from `device.state` (which may be a string from a
+ * `values` enum map, or a scaled number from `scale`) back into the raw
+ * integer that the wire expects.
+ */
+function encodeStateValue(
+  binding: NasaMessageBinding & { id: number },
+  current: any,
+): number | undefined {
+  if (current === undefined || current === null) return undefined;
+  // String → reverse the values map
+  if (typeof current === 'string') {
+    if (!binding.values) return undefined;
+    for (const [k, v] of Object.entries(binding.values)) {
+      if (v === current) return Number(k);
+    }
+    return undefined;
+  }
+  // Number — apply inverse scale if present
+  if (typeof current === 'number') {
+    return binding.scale ? Math.round(current / binding.scale) : current;
+  }
+  return undefined;
 }
 
 function collectCommandMessages(
