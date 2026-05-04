@@ -320,6 +320,19 @@ export interface NasaEntityConfig {
   rx?: { src?: NasaAddrSpec; dst?: NasaAddrSpec };
   /** Outgoing frame source/dest used by command_* specs. */
   tx?: { src?: NasaAddrSpec; dst?: NasaAddrSpec };
+  /**
+   * Constant messages emitted before every command frame.
+   * Korean Commax / Samsung DVM Home wallpads prepend `{id: 0x4050, value: 0}`
+   * to all control packets — omitting it makes the indoor unit beep an alarm.
+   */
+  tx_prefix?: Array<{ id: number; value: number }>;
+  /**
+   * Logical message names whose value is auto-appended from the device's
+   * current state if not already supplied by a command. Mirrors the wallpad's
+   * "always send full state bundle on every change" pattern. Order matters —
+   * messages are emitted in the order listed here.
+   */
+  tx_carry_state?: string[];
   /** Logical message map: `<name>: { id: 0x4001, attribute: 'mode', ... }` */
   messages: Record<string, NasaMessageBinding & { id: number }>;
 }
