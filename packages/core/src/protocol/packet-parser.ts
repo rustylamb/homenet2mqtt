@@ -7,6 +7,7 @@ import {
   getChecksum2Verifier,
   getChecksumOffsetType,
   getChecksum2OffsetType,
+  getChecksum2ExtraSkip,
   STANDARD_CHECKSUM_TYPES,
   STANDARD_CHECKSUM2_TYPES,
   ByteArray,
@@ -142,7 +143,9 @@ export class PacketParser {
     if (this.isStandard2Byte) {
       this.checksum2Fn = getChecksum2Verifier(checksum2Type as Checksum2Type);
       const offsetType = getChecksum2OffsetType(checksum2Type as Checksum2Type);
-      this.checksum2StartAdjust = offsetType === 'header' ? this.headerLength : 0;
+      const extraSkip = getChecksum2ExtraSkip(checksum2Type as Checksum2Type);
+      this.checksum2StartAdjust =
+        (offsetType === 'header' ? this.headerLength : 0) + extraSkip;
       this.cachedChecksum2Type = checksum2Type as string;
     }
 

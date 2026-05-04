@@ -38,12 +38,17 @@ export type ChecksumType =
  * - 기본 CRC16 이름(`crc16_*`): 헤더 + 데이터 대상.
  * - `_no_header` 접미사 CRC16(`crc16_*_no_header`): 데이터만 대상.
  * - `crc_ccitt_xmodem`: 레거시 alias (`crc16_xmodem_no_header`와 동일 동작).
+ * - `crc16_xmodem_nasa`: Samsung NASA HVAC variant. CRC over `data[3:-3]` —
+ *   skips 1-byte header + 2-byte size field at start; CRC bytes (2) + footer (1) auto-excluded.
+ *   Use with `rx_header: [0x32]`, `rx_footer: [0x34]`,
+ *   `rx_length_expr: 'data[1] * 256 + data[2] + 2'`.
  */
 export type Checksum2Type =
   | 'xor_add'
   | 'crc_ccitt_xmodem'
   | 'crc16_xmodem'
   | 'crc16_xmodem_no_header'
+  | 'crc16_xmodem_nasa'
   | 'crc16_ccitt_false'
   | 'crc16_ccitt_false_no_header'
   | 'crc16_modbus'
