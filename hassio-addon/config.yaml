@@ -1,5 +1,5 @@
 name: Homenet2MQTT
-version: "2026.5.1-feat.ed35f637-feat.ef30de08-feat.a1be1032-feat.b84a6369-feat.8d405145-feat.8bc1b918"
+version: "2026.5.1-feat.ed35f637-feat.ef30de08-feat.a1be1032-feat.b84a6369-feat.8d405145-feat.8bc1b918-feat.3404def3"
 breaking_versions: [2.0.0]
 slug: h2m
 description: Bridge between RS485 HomeNet devices and MQTT (supports multi-port/topic mapping).
